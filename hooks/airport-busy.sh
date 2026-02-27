@@ -18,7 +18,7 @@ if [ -z "$tool" ]; then
   prompt=$(echo "$input" | jq -r '.prompt // empty' 2>/dev/null)
   if [ -n "$prompt" ]; then
     short=$(echo "$prompt" | head -1 | cut -c1-50)
-    [ ${#short} -lt ${#prompt} ] && short="$short…"
+    [ ${#short} -lt ${#prompt} ] && short="${short}…"
     echo "busy;Thinking about: $short" > "$AIRPORT_STATUS_FILE"
   else
     echo "busy;Thinking" > "$AIRPORT_STATUS_FILE"
@@ -80,7 +80,7 @@ case "$tool" in
     if [ -n "$cmd" ]; then
       # Truncate long commands
       short=$(echo "$cmd" | head -1 | cut -c1-60)
-      [ ${#short} -lt ${#cmd} ] && short="$short…"
+      [ ${#short} -lt ${#cmd} ] && short="${short}…"
       desc="Running \`$short\`"
     else
       desc="Running command"
