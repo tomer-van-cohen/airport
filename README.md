@@ -5,7 +5,7 @@ A terminal multiplexer built for AI coding CLIs. Run multiple [Claude Code](http
 ## Quick Start
 
 ```bash
-npx airport
+npx airport-ai
 ```
 
 ## Install & Build from Source
