@@ -4,13 +4,24 @@
   "version": "1.0.0",
   "description": "Terminal multiplexer for AI coding CLIs",
   "main": ".vite/build/main.js",
+  "bin": {
+    "airport": "bin/airport.js"
+  },
+  "files": [
+    "bin/",
+    ".vite/",
+    "hooks/",
+    "scripts/",
+    "index.html"
+  ],
   "scripts": {
     "prestart": "node scripts/setup-hooks.mjs",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "lint": "eslint --ext .ts,.tsx .",
+    "prepublishOnly": "electron-forge package"
   },
   "keywords": [
     "electron",
@@ -59,6 +70,7 @@
     "@xterm/addon-serialize": "^0.14.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
+    "electron": "40.6.1",
     "electron-squirrel-startup": "^1.0.1",
     "node-pty": "^1.1.0",
     "react": "^19.2.4",

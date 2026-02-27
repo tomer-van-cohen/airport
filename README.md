@@ -2,7 +2,13 @@
 
 A terminal multiplexer built for AI coding CLIs. Run multiple [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions side-by-side with live status previews, so you always know which session needs your attention.
 
-## Install & Build
+## Quick Start
+
+```bash
+npx airport
+```
+
+## Install & Build from Source
 
 Requires Node 20+ (see `.nvmrc`).
 
