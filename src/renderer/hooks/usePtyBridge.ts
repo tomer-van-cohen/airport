@@ -229,9 +229,10 @@ export function usePtyBridge() {
       writeShadowTerminal(sessionId, options.buffer);
     }
 
+    const currentSessions = useTerminalStore.getState().sessions;
     addSession({
       id: sessionId,
-      title: options?.title || `Terminal ${useTerminalStore.getState().sessions.length + 1}`,
+      title: options?.title || `Terminal ${currentSessions.length + 1}`,
       customTitle: options?.customTitle || false,
       status: 'active',
       processName: '',
@@ -242,6 +243,7 @@ export function usePtyBridge() {
       waitingQuestion: '',
       gitRepo: '',
       gitBranch: '',
+      colorIndex: currentSessions.length,
     });
     return sessionId;
   };

@@ -81,7 +81,7 @@ export function TerminalSquareGrid({ onClose }: TerminalSquareGridProps) {
           <TerminalSquare
             session={session}
             isActive={session.id === activeSessionId}
-            tabColor={getTabColor(index)}
+            tabColor={getTabColor(session.colorIndex)}
             onClick={() => setActiveSession(session.id)}
             onClose={() => onClose(session.id)}
             draggable

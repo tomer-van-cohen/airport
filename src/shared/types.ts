@@ -11,6 +11,7 @@ export interface TerminalSession {
   waitingQuestion: string;
   gitRepo: string;
   gitBranch: string;
+  colorIndex: number;
 }
 
 export type SessionStatus =
