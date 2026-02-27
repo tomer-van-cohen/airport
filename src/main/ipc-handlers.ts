@@ -9,6 +9,23 @@ import { saveState, loadState } from './state-manager';
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Walk the process tree from `pid` down to its deepest descendant.
+ * In a PTY the chain is typically: zsh → claude → node → …
+ * The deepest child's cwd reflects the actual working directory
+ * (e.g. a git worktree), not the shell's original cwd.
+ */
+async function getDeepestDescendant(pid: number): Promise<number> {
+  try {
+    const { stdout } = await execFileAsync('pgrep', ['-P', String(pid)]);
+    const children = stdout.trim().split('\n').filter(Boolean).map(Number);
+    if (children.length === 0) return pid;
+    return getDeepestDescendant(children[0]);
+  } catch {
+    return pid; // no children — this is the leaf
+  }
+}
+
 export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.PTY_CREATE, (_event, options: PtyCreateOptions) => {
     return ptyManager.create(
@@ -48,10 +65,14 @@ export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => Bro
     const pid = ptyManager.getPid(sessionId);
     if (!pid) return { cwd: '', gitRepo: '', gitBranch: '' };
 
+    // Walk down to the deepest child so we pick up the cwd of the
+    // actual foreground process (e.g. claude running in a worktree),
+    // not the shell that Airport spawned.
+    const fgPid = await getDeepestDescendant(pid);
+
     let cwd = '';
     try {
-      // macOS: get cwd of the foreground process in the PTY
-      const { stdout } = await execFileAsync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn']);
+      const { stdout } = await execFileAsync('lsof', ['-a', '-p', String(fgPid), '-d', 'cwd', '-Fn']);
       const match = stdout.match(/\nn(.*)/);
       if (match) cwd = match[1];
     } catch { /* ignore */ }
@@ -61,8 +82,10 @@ export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => Bro
     let gitRepo = '';
     let gitBranch = '';
     try {
-      const { stdout: topLevel } = await execFileAsync('git', ['rev-parse', '--show-toplevel'], { cwd });
-      gitRepo = path.basename(topLevel.trim());
+      // --git-common-dir returns the main repo's .git dir even inside a worktree
+      // (relative ".git" in a normal repo, absolute path in a worktree)
+      const { stdout: commonDir } = await execFileAsync('git', ['rev-parse', '--git-common-dir'], { cwd });
+      gitRepo = path.basename(path.dirname(path.resolve(cwd, commonDir.trim())));
       const { stdout: branch } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd });
       gitBranch = branch.trim();
     } catch { /* not a git repo */ }

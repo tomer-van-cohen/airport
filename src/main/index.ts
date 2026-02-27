@@ -96,10 +96,19 @@ if (!gotLock) {
     }
   });
 
-  app.on('before-quit', () => {
-    // Mark stateSaved so the close handler doesn't intercept
-    stateSaved = true;
-    stopHookWatcher();
-    ptyManager.closeAll();
+  app.on('before-quit', (e) => {
+    if (!stateSaved && mainWindow && !mainWindow.isDestroyed()) {
+      e.preventDefault();
+      mainWindow.webContents.send(IPC.STATE_REQUEST_SAVE);
+      setTimeout(() => {
+        stateSaved = true;
+        stopHookWatcher();
+        ptyManager.closeAll();
+        app.quit();
+      }, 500);
+    } else {
+      stopHookWatcher();
+      ptyManager.closeAll();
+    }
   });
 }
