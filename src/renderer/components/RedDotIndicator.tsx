@@ -25,7 +25,8 @@ export const TAB_COLORS = [
 ];
 
 export function getTabColor(index: number): string {
-  return TAB_COLORS[index % TAB_COLORS.length];
+  const i = Number.isFinite(index) ? index : 0;
+  return TAB_COLORS[i % TAB_COLORS.length];
 }
 
 // Convert hex to rgba for the spinner ring background

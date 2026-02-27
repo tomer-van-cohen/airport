@@ -219,7 +219,7 @@ export function usePtyBridge() {
     };
   }, []);
 
-  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string }) => {
+  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number }) => {
     const { cols, rows } = mainDimsRef.current;
     const sessionId = await window.airport.pty.create({ cols, rows, cwd: options?.cwd });
     createShadowTerminal(sessionId, cols, rows);
@@ -229,10 +229,10 @@ export function usePtyBridge() {
       writeShadowTerminal(sessionId, options.buffer);
     }
 
-    const currentSessions = useTerminalStore.getState().sessions;
+    const store = useTerminalStore.getState();
     addSession({
       id: sessionId,
-      title: options?.title || `Terminal ${currentSessions.length + 1}`,
+      title: options?.title || `Terminal ${store.sessions.length + 1}`,
       customTitle: options?.customTitle || false,
       status: 'active',
       processName: '',
@@ -243,7 +243,7 @@ export function usePtyBridge() {
       waitingQuestion: '',
       gitRepo: '',
       gitBranch: '',
-      colorIndex: currentSessions.length,
+      colorIndex: options?.colorIndex ?? store.nextColorIndex,
     });
     return sessionId;
   };
@@ -277,6 +277,7 @@ export function usePtyBridge() {
       customTitle: session.customTitle,
       cwd: cachedCwds.get(session.id) || '',
       buffer: serializeShadowBuffer(session.id),
+      colorIndex: session.colorIndex,
     }));
 
     const activeIndex = sessions.findIndex((s) => s.id === activeSessionId);
@@ -294,6 +295,7 @@ export function usePtyBridge() {
         title: saved.title,
         customTitle: saved.customTitle,
         buffer: saved.buffer,
+        colorIndex: saved.colorIndex,
       });
       newIds.push(id);
     }
