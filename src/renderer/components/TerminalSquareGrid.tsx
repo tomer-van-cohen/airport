@@ -1,4 +1,5 @@
 import { TerminalSquare } from './TerminalSquare';
+import { getTabColor } from './RedDotIndicator';
 import { useTerminalStore } from '../store/terminal-store';
 
 interface TerminalSquareGridProps {
@@ -20,11 +21,12 @@ export function TerminalSquareGrid({ onClose }: TerminalSquareGridProps) {
         flex: 1,
       }}
     >
-      {sessions.map((session) => (
+      {sessions.map((session, index) => (
         <TerminalSquare
           key={session.id}
           session={session}
           isActive={session.id === activeSessionId}
+          tabColor={getTabColor(index)}
           onClick={() => setActiveSession(session.id)}
           onClose={() => onClose(session.id)}
         />

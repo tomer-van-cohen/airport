@@ -6,11 +6,12 @@ import type { TerminalSession } from '../../shared/types';
 interface TerminalSquareProps {
   session: TerminalSession;
   isActive: boolean;
+  tabColor: string;
   onClick: () => void;
   onClose: () => void;
 }
 
-export function TerminalSquare({ session, isActive, onClick, onClose }: TerminalSquareProps) {
+export function TerminalSquare({ session, isActive, tabColor, onClick, onClose }: TerminalSquareProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(session.title);
   const [titleHovered, setTitleHovered] = useState(false);
@@ -48,7 +49,7 @@ export function TerminalSquare({ session, isActive, onClick, onClose }: Terminal
         borderRadius: 6,
         overflow: 'hidden',
         cursor: 'pointer',
-        border: isActive ? '2px solid #89b4fa' : '2px solid #313244',
+        border: isActive ? `2px solid ${tabColor}` : '2px solid #313244',
         background: '#11111b',
         transition: 'border-color 0.15s ease',
         padding: '6px 8px',
@@ -57,7 +58,7 @@ export function TerminalSquare({ session, isActive, onClick, onClose }: Terminal
         gap: 3,
       }}
     >
-      <StatusDot status={session.status} />
+      <StatusDot status={session.status} color={tabColor} />
 
       <button
         onClick={(e) => {
