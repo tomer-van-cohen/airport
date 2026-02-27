@@ -18,7 +18,7 @@ const doneScript = join(projectRoot, 'hooks', 'airport-done.sh');
 const DESIRED_HOOKS = {
   UserPromptSubmit: busyScript,
   PreToolUse:       busyScript,
-  PostToolUse:      doneScript,
+  PostToolUse:      busyScript,
   Stop:             doneScript,
   Notification:     doneScript,
 };
