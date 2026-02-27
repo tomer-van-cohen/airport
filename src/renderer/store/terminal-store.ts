@@ -18,6 +18,7 @@ interface TerminalStore {
   setHookDone: (id: string, hookDone: boolean) => void;
   setWaitingQuestion: (id: string, waitingQuestion: string) => void;
   updateLastOutput: (id: string) => void;
+  reorderSession: (fromIndex: number, toIndex: number) => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set) => ({
@@ -111,4 +112,21 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
         s.id === id ? { ...s, lastOutputAt: Date.now() } : s
       ),
     })),
+
+  reorderSession: (fromIndex, toIndex) =>
+    set((state) => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= state.sessions.length ||
+        toIndex >= state.sessions.length
+      ) {
+        return state;
+      }
+      const sessions = [...state.sessions];
+      const [moved] = sessions.splice(fromIndex, 1);
+      sessions.splice(toIndex, 0, moved);
+      return { sessions };
+    }),
 }));

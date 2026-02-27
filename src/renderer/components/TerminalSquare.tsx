@@ -8,12 +8,17 @@ interface TerminalSquareProps {
   isActive: boolean;
   onClick: () => void;
   onClose: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
-export function TerminalSquare({ session, isActive, onClick, onClose }: TerminalSquareProps) {
+export function TerminalSquare({ session, isActive, onClick, onClose, draggable, onDragStart, onDragEnd, onDragOver }: TerminalSquareProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(session.title);
   const [titleHovered, setTitleHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const setSessionTitle = useTerminalStore((s) => s.setSessionTitle);
 
@@ -43,6 +48,16 @@ export function TerminalSquare({ session, isActive, onClick, onClose }: Terminal
   return (
     <div
       onClick={onClick}
+      draggable={draggable && !editing}
+      onDragStart={(e) => {
+        setIsDragging(true);
+        onDragStart?.(e);
+      }}
+      onDragEnd={(e) => {
+        setIsDragging(false);
+        onDragEnd?.(e);
+      }}
+      onDragOver={onDragOver}
       style={{
         position: 'relative',
         borderRadius: 6,
@@ -50,11 +65,12 @@ export function TerminalSquare({ session, isActive, onClick, onClose }: Terminal
         cursor: 'pointer',
         border: isActive ? '2px solid #89b4fa' : '2px solid #313244',
         background: '#11111b',
-        transition: 'border-color 0.15s ease',
+        transition: 'border-color 0.15s ease, opacity 0.15s ease',
         padding: '6px 8px',
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
+        opacity: isDragging ? 0.4 : 1,
       }}
     >
       <StatusDot status={session.status} />
