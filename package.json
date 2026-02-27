@@ -5,6 +5,7 @@
   "description": "Terminal multiplexer for AI coding CLIs",
   "main": ".vite/build/main.js",
   "scripts": {
+    "prestart": "node scripts/setup-hooks.mjs",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",

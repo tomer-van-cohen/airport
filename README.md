@@ -30,49 +30,11 @@ On Linux / Windows, substitute `Ctrl` for `Cmd`.
 
 Airport ships two shell scripts in `hooks/` that let it show real-time Claude Code activity (e.g. "Reading `App.tsx`", "Running agent: fix tests") inside each session tile.
 
-To wire them up, add the following to your Claude Code **settings** file (`~/.claude/settings.json` or the project-level `.claude/settings.json`):
+**Hooks are installed automatically** into `~/.claude/settings.json` when you run `npm start`. The setup is idempotent and won't overwrite your existing hooks.
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/airport/hooks/airport-busy.sh"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/airport/hooks/airport-done.sh"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/airport/hooks/airport-done.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+To remove them, delete the Airport entries from `~/.claude/settings.json` under the `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, and `Notification` events.
 
-Replace `/path/to/airport` with the actual clone location. Airport sets the `AIRPORT` and `AIRPORT_STATUS_FILE` environment variables for sessions it spawns — the hooks are no-ops when those variables are absent, so they won't interfere with Claude Code sessions outside Airport.
+The hooks are no-ops outside Airport — they check for the `AIRPORT` environment variable and exit silently when it's absent.
 
 ## License
 
