@@ -52,6 +52,7 @@ export interface SavedSession {
   customTitle: boolean;
   cwd: string;
   buffer: string;
+  colorIndex: number;
 }
 
 export interface SavedState {

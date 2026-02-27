@@ -4,6 +4,7 @@ import type { TerminalSession, SessionStatus } from '../../shared/types';
 interface TerminalStore {
   sessions: TerminalSession[];
   activeSessionId: string | null;
+  nextColorIndex: number;
 
   addSession: (session: TerminalSession) => void;
   removeSession: (id: string) => void;
@@ -24,11 +25,13 @@ interface TerminalStore {
 export const useTerminalStore = create<TerminalStore>((set) => ({
   sessions: [],
   activeSessionId: null,
+  nextColorIndex: 0,
 
   addSession: (session) =>
     set((state) => ({
-      sessions: [...state.sessions, session],
+      sessions: [...state.sessions, { ...session, colorIndex: session.colorIndex ?? state.nextColorIndex }],
       activeSessionId: state.activeSessionId ?? session.id,
+      nextColorIndex: Math.max(state.nextColorIndex, (session.colorIndex ?? state.nextColorIndex) + 1),
     })),
 
   removeSession: (id) =>
