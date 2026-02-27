@@ -1,0 +1,14 @@
+export const IPC = {
+  PTY_CREATE: 'pty:create',
+  PTY_WRITE: 'pty:write',
+  PTY_RESIZE: 'pty:resize',
+  PTY_CLOSE: 'pty:close',
+  PTY_GET_PROCESS_NAME: 'pty:getProcessName',
+  PTY_DATA: 'pty:data',
+  PTY_EXIT: 'pty:exit',
+  GET_SESSION_INFO: 'session:getInfo',
+  STATE_SAVE: 'state:save',
+  STATE_LOAD: 'state:load',
+  STATE_REQUEST_SAVE: 'state:requestSave',
+  HOOK_STATUS: 'hook:status',
+} as const;
