@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airport - Terminal Multiplexer for AI Coding CLIs</title>
+  <meta name="description" content="Run multiple Claude Code sessions side-by-side with live status previews. Know which session needs your attention at a glance.">
+  <meta property="og:title" content="Airport - Terminal Multiplexer for AI Coding CLIs">
+  <meta property="og:description" content="Run multiple Claude Code sessions side-by-side with live status previews.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://get-airport.com">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #1e1e2e;
+      --bg-surface:#181825;
+      --bg-overlay:#313244;
+      --border:    #45475a;
+      --text:      #cdd6f4;
+      --subtext:   #a6adc8;
+      --blue:      #89b4fa;
+      --green:     #a6e3a1;
+      --mauve:     #cba6f7;
+      --peach:     #fab387;
+      --pink:      #f5c2e7;
+      --red:       #f38ba8;
+      --yellow:    #f9e2af;
+      --teal:      #94e2d5;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(30, 30, 46, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    nav .logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    nav .logo span { color: var(--blue); }
+    nav .nav-links { display: flex; gap: 24px; }
+    nav .nav-links a {
+      color: var(--subtext);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    nav .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 140px 0 80px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: rgba(137, 180, 250, 0.1);
+      border: 1px solid rgba(137, 180, 250, 0.2);
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+    }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent { color: var(--blue); }
+    .hero .subtitle {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--subtext);
+      max-width: 600px;
+      margin: 0 auto 40px;
+      line-height: 1.5;
+    }
+
+    /* ── Install box ── */
+    .install-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .install-box:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.1);
+    }
+    .install-box .prompt { color: var(--green); user-select: none; }
+    .install-box .cmd { color: var(--text); }
+    .install-box .copy-icon {
+      color: var(--subtext);
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .install-box:hover .copy-icon { color: var(--blue); }
+    .install-hint {
+      font-size: 13px;
+      color: var(--subtext);
+      margin-bottom: 60px;
+    }
+    .install-hint.copied { color: var(--green); }
+
+    /* ── Screenshot ── */
+    .screenshot-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .screenshot-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+    }
+    .screenshot-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      color: var(--subtext);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* ── Features ── */
+    .features {
+      padding: 100px 0;
+    }
+    .features .section-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--mauve);
+      margin-bottom: 12px;
+    }
+    .features h2 {
+      text-align: center;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 60px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .feature-card:nth-child(1) .feature-icon { background: rgba(137, 180, 250, 0.12); }
+    .feature-card:nth-child(2) .feature-icon { background: rgba(166, 227, 161, 0.12); }
+    .feature-card:nth-child(3) .feature-icon { background: rgba(203, 166, 247, 0.12); }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .feature-card p {
+      color: var(--subtext);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    /* ── Shortcuts ── */
+    .shortcuts {
+      padding: 80px 0 100px;
+    }
+    .shortcuts .section-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--teal);
+      margin-bottom: 12px;
+    }
+    .shortcuts h2 {
+      text-align: center;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 48px;
+    }
+    .shortcut-table {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .shortcut-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .shortcut-table td {
+      padding: 14px 0;
+      font-size: 15px;
+    }
+    .shortcut-table td:first-child {
+      width: 55%;
+    }
+    .shortcut-table td:last-child {
+      color: var(--subtext);
+    }
+    kbd {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border);
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .shortcut-note {
+      text-align: center;
+      margin-top: 20px;
+      color: var(--subtext);
+      font-size: 14px;
+    }
+
+    /* ── Getting Started ── */
+    .getting-started {
+      padding: 80px 0 100px;
+    }
+    .getting-started .section-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--peach);
+      margin-bottom: 12px;
+    }
+    .getting-started h2 {
+      text-align: center;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 60px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .step {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(250, 179, 135, 0.12);
+      color: var(--peach);
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .step h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .step p {
+      color: var(--subtext);
+      font-size: 14px;
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+    .step code {
+      display: block;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 13px;
+      color: var(--green);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    footer .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    footer .footer-left {
+      color: var(--subtext);
+      font-size: 14px;
+    }
+    footer .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    footer .footer-links a {
+      color: var(--subtext);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    footer .footer-links a:hover { color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .feature-grid, .steps {
+        grid-template-columns: 1fr;
+      }
+      nav .nav-links { gap: 16px; }
+      nav .nav-links a { font-size: 13px; }
+      footer .container {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="container">
+      <div class="logo"><span>_</span> Airport</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#shortcuts">Shortcuts</a>
+        <a href="#get-started">Get Started</a>
+        <a href="https://github.com/tomer-van-cohen/airport">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="badge">Open Source &middot; MIT License</div>
+      <h1>Terminal multiplexer<br>for <span class="accent">AI coding CLIs</span></h1>
+      <p class="subtitle">
+        Run multiple Claude Code sessions side-by-side with live status previews.
+        Always know which session needs your attention.
+      </p>
+
+      <div class="install-box" onclick="copyInstall()" id="installBox">
+        <span class="prompt">$</span>
+        <span class="cmd">npx airport-ai</span>
+        <svg class="copy-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </div>
+      <p class="install-hint" id="installHint">Click to copy &middot; Requires Node 20+</p>
+
+      <div class="screenshot-wrap">
+        <img src="screenshot.jpg" alt="Airport terminal multiplexer showing multiple Claude Code sessions running in parallel">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2>Everything you need to run<br>parallel AI sessions</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#9638;</div>
+          <h3>Multi-session</h3>
+          <p>Spawn as many Claude Code sessions as you need. Each runs in its own PTY with a full terminal emulator. Switch between them instantly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#9679;</div>
+          <h3>Live status previews</h3>
+          <p>See what every session is doing at a glance &mdash; "Reading App.tsx", "Running tests", or "Waiting for input" &mdash; without switching to it.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#10094;&#10095;</div>
+          <h3>Claude Code hooks</h3>
+          <p>Hooks are auto-installed on launch. Airport reads Claude Code's tool activity in real-time so status is always accurate, never heuristic.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shortcuts -->
+  <section class="shortcuts" id="shortcuts">
+    <div class="container">
+      <p class="section-label">Keyboard Shortcuts</p>
+      <h2>Navigate at the speed of thought</h2>
+
+      <table class="shortcut-table">
+        <tr><td><kbd>Cmd</kbd> + <kbd>T</kbd></td><td>New session</td></tr>
+        <tr><td><kbd>Cmd</kbd> + <kbd>W</kbd></td><td>Close session</td></tr>
+        <tr><td><kbd>Cmd</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td><td>Switch to session 1&ndash;9</td></tr>
+        <tr><td><kbd>Cmd</kbd> + <kbd>[</kbd> / <kbd>]</kbd></td><td>Previous / next session</td></tr>
+        <tr><td><kbd>Cmd</kbd> + <kbd>J</kbd></td><td>Jump to next waiting session</td></tr>
+        <tr><td><kbd>Cmd</kbd> + <kbd>K</kbd></td><td>Clear terminal</td></tr>
+      </table>
+      <p class="shortcut-note">On Linux / Windows, substitute <kbd>Ctrl</kbd> for <kbd>Cmd</kbd></p>
+    </div>
+  </section>
+
+  <!-- Getting Started -->
+  <section class="getting-started" id="get-started">
+    <div class="container">
+      <p class="section-label">Getting Started</p>
+      <h2>Up and running in seconds</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Install &amp; launch</h3>
+          <p>One command. No clone, no build. npm handles the rest.</p>
+          <code>npx airport-ai</code>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Open sessions</h3>
+          <p><kbd>Cmd</kbd> + <kbd>T</kbd> to open new terminals. Run Claude Code in each one.</p>
+          <code>claude</code>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Work in parallel</h3>
+          <p>Status updates appear automatically. Hit <kbd>Cmd</kbd> + <kbd>J</kbd> to jump to whichever session needs you.</p>
+          <code>Cmd+J &rarr; jump to waiting</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alt: build from source -->
+  <section style="padding: 0 0 100px; text-align: center;">
+    <div class="container">
+      <p style="color: var(--subtext); font-size: 15px; margin-bottom: 12px;">Or build from source:</p>
+      <div class="install-box" style="cursor: default; font-size: 14px;">
+        <span class="prompt">$</span>
+        <span class="cmd">git clone https://github.com/tomer-van-cohen/airport &amp;&amp; cd airport &amp;&amp; npm i --legacy-peer-deps &amp;&amp; npm start</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Source CTA -->
+  <section style="padding: 0 0 100px; text-align: center;">
+    <div class="container">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px 32px; max-width: 640px; margin: 0 auto;">
+        <p style="font-size: 32px; margin-bottom: 16px;">&#9734;</p>
+        <h3 style="font-size: 22px; font-weight: 800; margin-bottom: 10px;">Airport is open source</h3>
+        <p style="color: var(--subtext); font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
+          Built in the open under the MIT license. Bug reports, feature ideas,
+          and pull requests are all welcome.
+        </p>
+        <a href="https://github.com/tomer-van-cohen/airport" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; background: var(--blue); color: var(--bg); font-weight: 700; font-size: 15px; text-decoration: none; transition: opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-left">MIT License &middot; Built for <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a></div>
+      <div class="footer-links">
+        <a href="https://github.com/tomer-van-cohen/airport">GitHub</a>
+        <a href="https://www.npmjs.com/package/airport-ai">npm</a>
+        <a href="https://github.com/tomer-van-cohen/airport/issues">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copyInstall() {
+      navigator.clipboard.writeText('npx airport-ai').then(() => {
+        const hint = document.getElementById('installHint');
+        hint.textContent = 'Copied!';
+        hint.classList.add('copied');
+        setTimeout(() => {
+          hint.textContent = 'Click to copy \u00b7 Requires Node 20+';
+          hint.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
