@@ -3,6 +3,7 @@ import { TitleBar } from './components/TitleBar';
 import { MainTerminal } from './components/MainTerminal';
 import { TerminalSquareGrid } from './components/TerminalSquareGrid';
 import { SessionControls } from './components/SessionControls';
+import { OnboardingScreen } from './components/OnboardingScreen';
 import { useTerminalStore } from './store/terminal-store';
 import { usePtyBridge } from './hooks/usePtyBridge';
 
@@ -16,14 +17,9 @@ export function App() {
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
 
-  // Restore previous state or create initial session
+  // Restore previous state (no auto-create — show onboarding if empty)
   useEffect(() => {
-    (async () => {
-      const restored = await restoreState();
-      if (!restored) {
-        await createSession();
-      }
-    })();
+    restoreState();
   }, []);
 
   const handleNewSession = useCallback(async () => {
@@ -90,7 +86,7 @@ export function App() {
 
       if (e.metaKey && e.key === 'w') {
         e.preventDefault();
-        if (activeSessionId && sessions.length > 1) {
+        if (activeSessionId) {
           closeSession(activeSessionId);
         }
         return;
@@ -163,14 +159,19 @@ export function App() {
           overflow: 'hidden',
         }}
       >
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          {activeSessionId && (
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex' }}>
+          {sessions.length === 0 ? (
+            <OnboardingScreen
+              onNewSession={handleNewSession}
+              onAdoptTerminals={handleAdoptTerminals}
+            />
+          ) : activeSessionId ? (
             <MainTerminal
               key={activeSessionId}
               sessionId={activeSessionId}
               onDimensions={handleDimensions}
             />
-          )}
+          ) : null}
         </div>
 
         {/* Drag handle */}
