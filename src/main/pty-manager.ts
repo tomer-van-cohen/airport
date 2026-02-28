@@ -93,6 +93,14 @@ export class PtyManager {
     return this.sessions.get(sessionId)?.statusFile;
   }
 
+  getOwnPids(): number[] {
+    const pids: number[] = [];
+    for (const session of this.sessions.values()) {
+      pids.push(session.process.pid);
+    }
+    return pids;
+  }
+
   getAllSessionIds(): string[] {
     return Array.from(this.sessions.keys());
   }

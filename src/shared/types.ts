@@ -66,6 +66,13 @@ export interface HookStatusEvent {
   message: string;
 }
 
+export interface ExternalTerminal {
+  pid: number;
+  tty: string;
+  shell: string;
+  cwd: string;
+}
+
 export interface AirportApi {
   pty: {
     create: (options: PtyCreateOptions) => Promise<string>;
@@ -81,6 +88,7 @@ export interface AirportApi {
   loadState: () => Promise<SavedState | null>;
   onRequestSave: (callback: () => void) => () => void;
   onHookStatus: (callback: (event: HookStatusEvent) => void) => () => void;
+  discoverTerminals: () => Promise<ExternalTerminal[]>;
 }
 
 declare global {

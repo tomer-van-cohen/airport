@@ -31,6 +31,23 @@ export function App() {
     useTerminalStore.getState().setActiveSession(id);
   }, [createSession]);
 
+  const handleAdoptTerminals = useCallback(async () => {
+    const terminals = await window.airport.discoverTerminals();
+    if (terminals.length === 0) return;
+
+    let firstId: string | null = null;
+    for (const terminal of terminals) {
+      const id = await createSession({
+        cwd: terminal.cwd,
+        title: terminal.cwd.split('/').pop() || terminal.shell,
+      });
+      if (!firstId) firstId = id;
+    }
+    if (firstId) {
+      useTerminalStore.getState().setActiveSession(firstId);
+    }
+  }, [createSession]);
+
   const handleDimensions = useCallback(
     (cols: number, rows: number) => {
       setMainDimensions(cols, rows);
@@ -192,7 +209,7 @@ export function App() {
           <TerminalSquareGrid
             onClose={closeSession}
           />
-          <SessionControls onNewSession={handleNewSession} />
+          <SessionControls onNewSession={handleNewSession} onAdoptTerminals={handleAdoptTerminals} />
         </div>
       </div>
     </div>
