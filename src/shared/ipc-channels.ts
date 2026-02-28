@@ -11,4 +11,5 @@ export const IPC = {
   STATE_LOAD: 'state:load',
   STATE_REQUEST_SAVE: 'state:requestSave',
   HOOK_STATUS: 'hook:status',
+  DISCOVER_TERMINALS: 'terminals:discover',
 } as const;

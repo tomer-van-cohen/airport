@@ -11,7 +11,11 @@ if (started) {
   app.quit();
 }
 
-app.setName('Airport');
+const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
+app.setName(isDev ? 'Airport Dev' : 'Airport');
+if (isDev) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'Airport Dev'));
+}
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {

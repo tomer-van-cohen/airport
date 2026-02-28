@@ -14,9 +14,11 @@ const config: ForgeConfig = {
   },
   hooks: {
     preStart: async () => {
-      const plist = resolve(__dirname, 'node_modules/electron/dist/Electron.app/Contents/Info.plist');
-      execSync(`plutil -replace CFBundleDisplayName -string Airport "${plist}"`);
-      execSync(`plutil -replace CFBundleName -string Airport "${plist}"`);
+      process.env.AIRPORT_DEV = '1';
+      const plist = resolve(require.resolve('electron/package.json'), '..', 'dist/Electron.app/Contents/Info.plist');
+      execSync(`plutil -replace CFBundleIdentifier -string com.airport.dev "${plist}"`);
+      execSync(`plutil -replace CFBundleDisplayName -string "Airport Dev" "${plist}"`);
+      execSync(`plutil -replace CFBundleName -string "Airport Dev" "${plist}"`);
     },
   },
   rebuildConfig: {},

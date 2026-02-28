@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc-channels';
-import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, AirportApi, SessionInfo, SavedState } from '../shared/types';
+import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal } from '../shared/types';
 
 const api: AirportApi = {
   pty: {
@@ -42,6 +42,8 @@ const api: AirportApi = {
     ipcRenderer.on(IPC.STATE_REQUEST_SAVE, handler);
     return () => ipcRenderer.removeListener(IPC.STATE_REQUEST_SAVE, handler);
   },
+  discoverTerminals: (): Promise<ExternalTerminal[]> =>
+    ipcRenderer.invoke(IPC.DISCOVER_TERMINALS),
   onHookStatus: (callback: (event: HookStatusEvent) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: HookStatusEvent) => callback(data);
     ipcRenderer.on(IPC.HOOK_STATUS, handler);
