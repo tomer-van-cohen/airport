@@ -94,32 +94,40 @@ export function App() {
 
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
+        const visible = sessions.filter((s) => !s.backlog);
         const idx = parseInt(e.key) - 1;
-        if (idx < sessions.length) {
-          setActiveSession(sessions[idx].id);
+        if (idx < visible.length) {
+          setActiveSession(visible[idx].id);
         }
         return;
       }
 
       if (e.metaKey && e.key === ']') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        setActiveSession(sessions[(idx + 1) % sessions.length].id);
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        if (visible.length > 0) {
+          setActiveSession(visible[(idx + 1) % visible.length].id);
+        }
         return;
       }
 
       if (e.metaKey && e.key === '[') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        setActiveSession(sessions[(idx - 1 + sessions.length) % sessions.length].id);
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        if (visible.length > 0) {
+          setActiveSession(visible[(idx - 1 + visible.length) % visible.length].id);
+        }
         return;
       }
 
       if (e.metaKey && e.key === 'j') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        for (let i = 1; i <= sessions.length; i++) {
-          const candidate = sessions[(idx + i) % sessions.length];
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        for (let i = 1; i <= visible.length; i++) {
+          const candidate = visible[(idx + i) % visible.length];
           if (candidate.hookDone) {
             setActiveSession(candidate.id);
             break;

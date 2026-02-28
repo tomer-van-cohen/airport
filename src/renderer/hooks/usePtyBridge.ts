@@ -255,6 +255,7 @@ export function usePtyBridge() {
       gitRepo: '',
       gitBranch: '',
       colorIndex: options?.colorIndex ?? store.nextColorIndex,
+      backlog: false,
     });
     return sessionId;
   };
@@ -289,6 +290,7 @@ export function usePtyBridge() {
       cwd: cachedCwds.get(session.id) || '',
       buffer: serializeShadowBuffer(session.id),
       colorIndex: session.colorIndex,
+      backlog: session.backlog || undefined,
     }));
 
     const activeIndex = sessions.findIndex((s) => s.id === activeSessionId);
@@ -308,6 +310,9 @@ export function usePtyBridge() {
         buffer: saved.buffer,
         colorIndex: saved.colorIndex,
       });
+      if (saved.backlog) {
+        useTerminalStore.getState().updateSession(id, { backlog: true });
+      }
       newIds.push(id);
     }
 

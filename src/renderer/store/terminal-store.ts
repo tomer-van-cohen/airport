@@ -20,6 +20,8 @@ interface TerminalStore {
   setWaitingQuestion: (id: string, waitingQuestion: string) => void;
   updateLastOutput: (id: string) => void;
   reorderSession: (fromIndex: number, toIndex: number) => void;
+  moveToBacklog: (id: string) => void;
+  restoreFromBacklog: (id: string, insertIndex?: number) => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set) => ({
@@ -29,7 +31,7 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
 
   addSession: (session) =>
     set((state) => ({
-      sessions: [...state.sessions, { ...session, colorIndex: session.colorIndex ?? state.nextColorIndex }],
+      sessions: [...state.sessions, { ...session, backlog: session.backlog ?? false, colorIndex: session.colorIndex ?? state.nextColorIndex }],
       activeSessionId: state.activeSessionId ?? session.id,
       nextColorIndex: Math.max(state.nextColorIndex, (session.colorIndex ?? state.nextColorIndex) + 1),
     })),
@@ -130,6 +132,30 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       const sessions = [...state.sessions];
       const [moved] = sessions.splice(fromIndex, 1);
       sessions.splice(toIndex, 0, moved);
+      return { sessions };
+    }),
+
+  moveToBacklog: (id) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, backlog: true } : s
+      ),
+    })),
+
+  restoreFromBacklog: (id, insertIndex) =>
+    set((state) => {
+      const sessions = [...state.sessions];
+      const idx = sessions.findIndex((s) => s.id === id);
+      if (idx === -1) return state;
+      const [moved] = sessions.splice(idx, 1);
+      moved.backlog = false;
+      if (insertIndex !== undefined && insertIndex >= 0) {
+        sessions.splice(insertIndex, 0, moved);
+      } else {
+        // Insert at end of normal sessions (before first backlog session)
+        const firstBacklogIdx = sessions.findIndex((s) => s.backlog);
+        sessions.splice(firstBacklogIdx === -1 ? sessions.length : firstBacklogIdx, 0, moved);
+      }
       return { sessions };
     }),
 }));
