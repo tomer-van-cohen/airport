@@ -221,7 +221,13 @@ export function usePtyBridge() {
 
   const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number }) => {
     const { cols, rows } = mainDimsRef.current;
-    const sessionId = await window.airport.pty.create({ cols, rows, cwd: options?.cwd });
+    // Inherit cwd from the active session when not explicitly provided
+    let cwd = options?.cwd;
+    if (!cwd) {
+      const activeId = useTerminalStore.getState().activeSessionId;
+      if (activeId) cwd = cachedCwds.get(activeId);
+    }
+    const sessionId = await window.airport.pty.create({ cols, rows, cwd });
     createShadowTerminal(sessionId, cols, rows);
 
     // If restoring a buffer, write it to the shadow terminal
