@@ -196,7 +196,12 @@ export function usePtyBridge() {
             if (session.gitRepo !== info.gitRepo || session.gitBranch !== info.gitBranch) {
               setSessionGitInfo(session.id, info.gitRepo, info.gitBranch);
             }
-          } else if (session.gitRepo || session.gitBranch) {
+          } else if (info.cwd && (session.gitRepo || session.gitBranch)) {
+            // Only clear git info when we successfully resolved a cwd but
+            // found no git repo (user genuinely left a git directory).
+            // When cwd is empty the process-tree walk failed transiently
+            // (common while Claude spawns short-lived subprocesses) — keep
+            // the previously detected git info to avoid title blinking.
             setSessionGitInfo(session.id, '', '');
           }
         } catch { /* ignore */ }
