@@ -33,7 +33,7 @@ if (!gotLock) {
       minHeight: 500,
       titleBarStyle: 'hiddenInset',
       trafficLightPosition: { x: 12, y: 12 },
-      backgroundColor: '#1e1e2e',
+      backgroundColor: '#000000',
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
       },

@@ -147,7 +147,7 @@ export function App() {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        background: '#1e1e2e',
+        background: '#000000',
       }}
     >
       <TitleBar />
