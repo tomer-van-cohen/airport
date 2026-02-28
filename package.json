@@ -1,7 +1,7 @@
 {
   "name": "airport-ai",
   "productName": "Airport",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Terminal multiplexer for AI coding CLIs",
   "main": ".vite/build/main.js",
   "bin": {
