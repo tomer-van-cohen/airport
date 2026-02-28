@@ -12,6 +12,7 @@ export interface TerminalSession {
   gitRepo: string;
   gitBranch: string;
   colorIndex: number;
+  backlog: boolean;
 }
 
 export type SessionStatus =
@@ -53,6 +54,7 @@ export interface SavedSession {
   cwd: string;
   buffer: string;
   colorIndex: number;
+  backlog?: boolean;
 }
 
 export interface SavedState {
