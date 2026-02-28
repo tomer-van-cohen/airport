@@ -53,6 +53,12 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
       // WebGL not available, fall back to canvas renderer
     }
 
+    // Let Ctrl+Tab bubble to the window handler
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.ctrlKey && e.key === 'Tab') return false;
+      return true;
+    });
+
     fitAddon.fit();
     termRef.current = term;
     fitRef.current = fitAddon;

@@ -4,6 +4,7 @@ import type { TerminalSession, SessionStatus } from '../../shared/types';
 interface TerminalStore {
   sessions: TerminalSession[];
   activeSessionId: string | null;
+  previousSessionId: string | null;
   nextColorIndex: number;
 
   addSession: (session: TerminalSession) => void;
@@ -15,6 +16,7 @@ interface TerminalStore {
   setSessionProcessName: (id: string, processName: string) => void;
   setSessionTitle: (id: string, title: string, custom?: boolean) => void;
   setSessionGitInfo: (id: string, gitRepo: string, gitBranch: string) => void;
+  setSessionCwd: (id: string, cwd: string) => void;
   setHookMessage: (id: string, hookMessage: string) => void;
   setHookDone: (id: string, hookDone: boolean) => void;
   setWaitingQuestion: (id: string, waitingQuestion: string) => void;
@@ -27,6 +29,7 @@ interface TerminalStore {
 export const useTerminalStore = create<TerminalStore>((set) => ({
   sessions: [],
   activeSessionId: null,
+  previousSessionId: null,
   nextColorIndex: 0,
 
   addSession: (session) =>
@@ -46,7 +49,10 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       return { sessions, activeSessionId };
     }),
 
-  setActiveSession: (id) => set({ activeSessionId: id }),
+  setActiveSession: (id) => set((state) => ({
+    activeSessionId: id,
+    previousSessionId: state.activeSessionId !== id ? state.activeSessionId : state.previousSessionId,
+  })),
 
   updateSession: (id, updates) =>
     set((state) => ({
@@ -87,6 +93,13 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
     set((state) => ({
       sessions: state.sessions.map((s) =>
         s.id === id ? { ...s, gitRepo, gitBranch } : s
+      ),
+    })),
+
+  setSessionCwd: (id, cwd) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, cwd } : s
       ),
     })),
 

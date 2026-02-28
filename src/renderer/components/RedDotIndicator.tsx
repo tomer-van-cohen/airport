@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { SessionStatus } from '../../shared/types';
 
 const SPINNER_ID = 'airport-spinner';
@@ -37,10 +38,49 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export function StatusDot({ status, color = '#89b4fa' }: { status: SessionStatus; color?: string }) {
+export function StatusDot({ status, color = '#89b4fa', onClose }: { status: SessionStatus; color?: string; onClose?: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose?.();
+  };
+
+  if (hovered && onClose) {
+    return (
+      <div
+        onClick={handleClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: 'absolute',
+          top: 3,
+          right: 3,
+          width: 12,
+          height: 12,
+          borderRadius: '50%',
+          backgroundColor: '#f38ba8',
+          zIndex: 2,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 8,
+          fontWeight: 700,
+          lineHeight: 1,
+          color: '#000',
+        }}
+      >
+        ×
+      </div>
+    );
+  }
+
   if (status === 'active') {
     return (
       <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
           position: 'absolute',
           top: 4,
@@ -67,6 +107,8 @@ export function StatusDot({ status, color = '#89b4fa' }: { status: SessionStatus
 
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         width: 8,
         height: 8,

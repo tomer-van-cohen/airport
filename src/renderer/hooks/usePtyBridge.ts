@@ -77,7 +77,7 @@ function findDefault(lines: string[]): string {
 }
 
 export function usePtyBridge() {
-  const { addSession, removeSession, updateLastOutput, setSessionStandby, setSessionProcessName, setSessionStatus, setSessionTitle, setSessionGitInfo, setHookMessage, setHookDone, setWaitingQuestion } =
+  const { addSession, removeSession, updateLastOutput, setSessionStandby, setSessionProcessName, setSessionStatus, setSessionTitle, setSessionGitInfo, setSessionCwd, setHookMessage, setHookDone, setWaitingQuestion } =
     useTerminalStore();
   const pollIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const mainDimsRef = useRef({ cols: 80, rows: 24 });
@@ -187,7 +187,10 @@ export function usePtyBridge() {
 
         try {
           const info = await window.airport.getSessionInfo(session.id);
-          if (info.cwd) cachedCwds.set(session.id, info.cwd);
+          if (info.cwd) {
+            cachedCwds.set(session.id, info.cwd);
+            if (session.cwd !== info.cwd) setSessionCwd(session.id, info.cwd);
+          }
           if (!session.customTitle && info.gitRepo && info.gitBranch) {
             const gitTitle = `${info.gitRepo}/${info.gitBranch}`;
             if (session.title !== gitTitle) {
@@ -256,6 +259,7 @@ export function usePtyBridge() {
       gitBranch: '',
       colorIndex: options?.colorIndex ?? store.nextColorIndex,
       backlog: false,
+      cwd: cwd || '',
     });
     return sessionId;
   };

@@ -13,6 +13,7 @@ export interface TerminalSession {
   gitBranch: string;
   colorIndex: number;
   backlog: boolean;
+  cwd: string;
 }
 
 export type SessionStatus =

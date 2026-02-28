@@ -12,7 +12,7 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 600;
 
 export function App() {
-  const { sessions, activeSessionId, setActiveSession } = useTerminalStore();
+  const { sessions, activeSessionId, previousSessionId, setActiveSession } = useTerminalStore();
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
@@ -88,6 +88,14 @@ export function App() {
         e.preventDefault();
         if (activeSessionId) {
           closeSession(activeSessionId);
+        }
+        return;
+      }
+
+      if (e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault();
+        if (previousSessionId && sessions.some((s) => s.id === previousSessionId)) {
+          setActiveSession(previousSessionId);
         }
         return;
       }

@@ -22,6 +22,7 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const setSessionTitle = useTerminalStore((s) => s.setSessionTitle);
+  const folderName = !session.gitRepo && session.cwd ? session.cwd.split('/').filter(Boolean).pop() || '' : '';
 
   useEffect(() => {
     if (editing) {
@@ -74,7 +75,7 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
         opacity: isDragging ? 0.4 : 1,
       }}
     >
-      <StatusDot status={session.status} color={tabColor} />
+      <StatusDot status={session.status} color={tabColor} onClose={onClose} />
 
       <button
         onClick={(e) => {
@@ -214,6 +215,9 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
                 }}
               >
                 {session.title}
+                {folderName && (
+                  <span style={{ fontWeight: 400, color: '#6c7086' }}> ({folderName})</span>
+                )}
               </span>
             )}
             {titleHovered && (
