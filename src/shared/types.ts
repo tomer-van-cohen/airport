@@ -1,3 +1,9 @@
+export interface PlanFile {
+  name: string;
+  path: string;
+  modifiedAt: number;
+}
+
 export interface TerminalSession {
   id: string;
   title: string;
@@ -14,6 +20,7 @@ export interface TerminalSession {
   colorIndex: number;
   backlog: boolean;
   cwd: string;
+  planFiles: PlanFile[];
 }
 
 export type SessionStatus =
@@ -92,6 +99,8 @@ export interface AirportApi {
   onRequestSave: (callback: () => void) => () => void;
   onHookStatus: (callback: (event: HookStatusEvent) => void) => () => void;
   discoverTerminals: () => Promise<ExternalTerminal[]>;
+  getPlanFiles: (cwd: string) => Promise<PlanFile[]>;
+  readPlanFile: (path: string) => Promise<string>;
 }
 
 declare global {

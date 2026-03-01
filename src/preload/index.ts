@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc-channels';
-import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal } from '../shared/types';
+import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
 
 const api: AirportApi = {
   pty: {
@@ -44,6 +44,10 @@ const api: AirportApi = {
   },
   discoverTerminals: (): Promise<ExternalTerminal[]> =>
     ipcRenderer.invoke(IPC.DISCOVER_TERMINALS),
+  getPlanFiles: (cwd: string): Promise<PlanFile[]> =>
+    ipcRenderer.invoke(IPC.PLAN_GET_FILES, cwd),
+  readPlanFile: (path: string): Promise<string> =>
+    ipcRenderer.invoke(IPC.PLAN_READ_FILE, path),
   onHookStatus: (callback: (event: HookStatusEvent) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: HookStatusEvent) => callback(data);
     ipcRenderer.on(IPC.HOOK_STATUS, handler);

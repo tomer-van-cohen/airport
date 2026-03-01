@@ -2,9 +2,10 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
+import fs from 'node:fs';
 import { PtyManager } from './pty-manager';
 import { IPC } from '../shared/ipc-channels';
-import { PtyCreateOptions, SessionInfo, SavedState, ExternalTerminal } from '../shared/types';
+import { PtyCreateOptions, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
 import { saveState, loadState } from './state-manager';
 
 const execFileAsync = promisify(execFile);
@@ -150,6 +151,38 @@ export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => Bro
       seen.add(t.cwd);
       return true;
     });
+  });
+
+  ipcMain.handle(IPC.PLAN_GET_FILES, async (_event, _cwd: string): Promise<PlanFile[]> => {
+    // Claude Code stores all plans globally in ~/.claude/plans/.
+    // Return all plan files so the renderer can track which are new.
+    const home = process.env.HOME || process.env.USERPROFILE || '';
+    if (!home) return [];
+    const plansDir = path.join(home, '.claude', 'plans');
+
+    try {
+      const entries = await fs.promises.readdir(plansDir, { withFileTypes: true });
+      const files: PlanFile[] = [];
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+        const filePath = path.join(plansDir, entry.name);
+        const stat = await fs.promises.stat(filePath);
+        files.push({ name: entry.name, path: filePath, modifiedAt: stat.mtimeMs });
+      }
+      return files;
+    } catch {
+      return [];
+    }
+  });
+
+  ipcMain.handle(IPC.PLAN_READ_FILE, async (_event, filePath: string): Promise<string> => {
+    if (!filePath.includes('.claude/plans/') && !filePath.includes('.claude\\plans\\')) return '';
+    if (!filePath.endsWith('.md')) return '';
+    try {
+      return await fs.promises.readFile(filePath, 'utf-8');
+    } catch {
+      return '';
+    }
   });
 
   ipcMain.handle(IPC.STATE_SAVE, (_event, state: SavedState) => {

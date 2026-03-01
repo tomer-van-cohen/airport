@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import type { TerminalSession, SessionStatus } from '../../shared/types';
+import type { TerminalSession, SessionStatus, PlanFile } from '../../shared/types';
 
 interface TerminalStore {
   sessions: TerminalSession[];
   activeSessionId: string | null;
   previousSessionId: string | null;
   nextColorIndex: number;
+  planViewSessionId: string | null;
+  planViewPath: string | null;
 
   addSession: (session: TerminalSession) => void;
   removeSession: (id: string) => void;
@@ -24,6 +26,9 @@ interface TerminalStore {
   reorderSession: (fromIndex: number, toIndex: number) => void;
   moveToBacklog: (id: string) => void;
   restoreFromBacklog: (id: string, insertIndex?: number) => void;
+  setPlanFiles: (id: string, planFiles: PlanFile[]) => void;
+  viewPlan: (sessionId: string, path: string) => void;
+  closePlanView: () => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set) => ({
@@ -31,6 +36,8 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
   activeSessionId: null,
   previousSessionId: null,
   nextColorIndex: 0,
+  planViewSessionId: null,
+  planViewPath: null,
 
   addSession: (session) =>
     set((state) => ({
@@ -46,12 +53,19 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       if (activeSessionId === id) {
         activeSessionId = sessions.length > 0 ? sessions[sessions.length - 1].id : null;
       }
-      return { sessions, activeSessionId };
+      const clearPlan = state.planViewSessionId === id;
+      return {
+        sessions,
+        activeSessionId,
+        ...(clearPlan ? { planViewSessionId: null, planViewPath: null } : {}),
+      };
     }),
 
   setActiveSession: (id) => set((state) => ({
     activeSessionId: id,
     previousSessionId: state.activeSessionId !== id ? state.activeSessionId : state.previousSessionId,
+    planViewSessionId: null,
+    planViewPath: null,
   })),
 
   updateSession: (id, updates) =>
@@ -171,4 +185,23 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       }
       return { sessions };
     }),
+
+  setPlanFiles: (id, planFiles) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, planFiles } : s
+      ),
+    })),
+
+  viewPlan: (sessionId, path) =>
+    set(() => ({
+      planViewSessionId: sessionId,
+      planViewPath: path,
+    })),
+
+  closePlanView: () =>
+    set(() => ({
+      planViewSessionId: null,
+      planViewPath: null,
+    })),
 }));
