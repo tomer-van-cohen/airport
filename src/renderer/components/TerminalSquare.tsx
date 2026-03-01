@@ -22,6 +22,8 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const setSessionTitle = useTerminalStore((s) => s.setSessionTitle);
+  const viewPlan = useTerminalStore((s) => s.viewPlan);
+  const setActiveSession = useTerminalStore((s) => s.setActiveSession);
   const folderName = !session.gitRepo && session.cwd ? session.cwd.split('/').filter(Boolean).pop() || '' : '';
 
   useEffect(() => {
@@ -242,6 +244,46 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
           </div>
         )}
       </div>
+
+      {/* Plan badge */}
+      {session.planFiles.length > 0 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveSession(session.id);
+            viewPlan(session.id, session.planFiles[0].path);
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: 'rgba(203, 166, 247, 0.1)',
+            border: '1px solid rgba(203, 166, 247, 0.3)',
+            borderRadius: 4,
+            padding: '2px 6px',
+            cursor: 'pointer',
+            color: '#cba6f7',
+            fontSize: 10,
+            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontWeight: 600,
+            alignSelf: 'flex-start',
+            transition: 'background 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = 'rgba(203, 166, 247, 0.2)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(203, 166, 247, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = 'rgba(203, 166, 247, 0.1)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(203, 166, 247, 0.3)';
+          }}
+        >
+          <svg width={10} height={10} viewBox="0 0 16 16" fill="#cba6f7">
+            <path d="M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0110.25 10H7.061l-2.574 2.573A1.458 1.458 0 012 11.543V10h-.25A1.75 1.75 0 010 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h1a.75.75 0 01.75.75v2.19l2.72-2.72a.749.749 0 01.53-.22h3.5a.25.25 0 00.25-.25v-5.5a.25.25 0 00-.25-.25h-8.5a.25.25 0 00-.25.25Zm13 2a.25.25 0 00-.25-.25h-.5a.75.75 0 010-1.5h.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0114.25 12H14v1.543a1.458 1.458 0 01-2.487 1.03L9.22 12.28a.749.749 0 111.06-1.06l2.22 2.22v-2.19a.75.75 0 01.75-.75h1a.25.25 0 00.25-.25v-5.5Z"/>
+          </svg>
+          Review plan
+        </button>
+      )}
 
       {/* Status bar */}
       <div style={{

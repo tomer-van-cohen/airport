@@ -4,6 +4,7 @@ import { MainTerminal } from './components/MainTerminal';
 import { TerminalSquareGrid } from './components/TerminalSquareGrid';
 import { SessionControls } from './components/SessionControls';
 import { OnboardingScreen } from './components/OnboardingScreen';
+import { PlanReviewPanel } from './components/PlanReviewPanel';
 import { useTerminalStore } from './store/terminal-store';
 import { usePtyBridge } from './hooks/usePtyBridge';
 
@@ -12,7 +13,7 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 600;
 
 export function App() {
-  const { sessions, activeSessionId, previousSessionId, setActiveSession } = useTerminalStore();
+  const { sessions, activeSessionId, previousSessionId, setActiveSession, planViewSessionId, planViewPath } = useTerminalStore();
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
@@ -180,6 +181,11 @@ export function App() {
             <OnboardingScreen
               onNewSession={handleNewSession}
               onAdoptTerminals={handleAdoptTerminals}
+            />
+          ) : planViewSessionId && planViewPath ? (
+            <PlanReviewPanel
+              sessionId={planViewSessionId}
+              planPath={planViewPath}
             />
           ) : activeSessionId ? (
             <MainTerminal
