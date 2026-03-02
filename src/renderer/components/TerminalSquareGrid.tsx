@@ -61,8 +61,12 @@ export function TerminalSquareGrid({ onClose }: TerminalSquareGridProps) {
       }
     } else if (fromZone === 'backlog' && toZone === 'normal') {
       // Backlog → normal: restore and insert at position
-      const insertGlobal = globalIndex('normal', toLocal);
-      restoreFromBacklog(sessionId, insertGlobal);
+      if (normalSessions.length === 0) {
+        restoreFromBacklog(sessionId);
+      } else {
+        const insertGlobal = globalIndex('normal', toLocal);
+        restoreFromBacklog(sessionId, insertGlobal);
+      }
     } else if (fromZone === 'normal' && toZone === 'backlog') {
       // Normal → backlog: move to backlog
       moveToBacklog(sessionId);
@@ -136,6 +140,28 @@ export function TerminalSquareGrid({ onClose }: TerminalSquareGridProps) {
       {/* Normal sessions */}
       {normalSessions.map((session, index) =>
         renderSessionItem('normal', normalSessions, session, index)
+      )}
+
+      {/* Empty-state drop zone for restoring from backlog when main list is empty */}
+      {normalSessions.length === 0 && dragSource && (
+        <div
+          onDragOver={handleDragOver('normal', 0)}
+          onDragEnter={(e) => { e.preventDefault(); setDropTarget({ zone: 'normal', index: 0 }); }}
+          onDragLeave={() => { if (dropTarget?.zone === 'normal') setDropTarget(null); }}
+          style={{
+            padding: '16px 8px',
+            borderRadius: 6,
+            border: `1px dashed ${dropTarget?.zone === 'normal' ? '#89b4fa' : '#585b70'}`,
+            background: dropTarget?.zone === 'normal' ? 'rgba(137, 180, 250, 0.1)' : 'transparent',
+            color: '#585b70',
+            fontSize: 11,
+            textAlign: 'center',
+            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            transition: 'background 0.15s, border-color 0.15s',
+          }}
+        >
+          Drop here
+        </div>
       )}
 
       {/* Backlog section */}
