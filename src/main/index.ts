@@ -13,7 +13,11 @@ if (started) {
   app.quit();
 }
 
-app.setName('Airport');
+const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
+app.setName(isDev ? 'Airport Dev' : 'Airport');
+if (isDev) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'Airport Dev'));
+}
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -32,7 +36,7 @@ if (!gotLock) {
       minHeight: 500,
       titleBarStyle: 'hiddenInset',
       trafficLightPosition: { x: 12, y: 12 },
-      backgroundColor: '#1e1e2e',
+      backgroundColor: '#000000',
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
       },

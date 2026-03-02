@@ -2,9 +2,10 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
+import fs from 'node:fs';
 import { PtyManager } from './pty-manager';
 import { IPC } from '../shared/ipc-channels';
-import { PtyCreateOptions, SessionInfo, SavedState } from '../shared/types';
+import { PtyCreateOptions, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
 import { saveState, loadState } from './state-manager';
 
 const execFileAsync = promisify(execFile);
@@ -95,6 +96,97 @@ export function registerIpcHandlers(
     } catch { /* not a git repo */ }
 
     return { cwd, gitRepo, gitBranch };
+  });
+
+  ipcMain.handle(IPC.DISCOVER_TERMINALS, async (): Promise<ExternalTerminal[]> => {
+    const ownPids = new Set(ptyManager.getOwnPids());
+    const shellNames = new Set(['zsh', 'bash', 'fish', 'sh', 'tcsh', 'ksh']);
+
+    let psOutput: string;
+    try {
+      const { stdout } = await execFileAsync('ps', ['-eo', 'pid,tty,comm']);
+      psOutput = stdout;
+    } catch {
+      return [];
+    }
+
+    const candidates: Array<{ pid: number; tty: string; shell: string }> = [];
+    for (const line of psOutput.trim().split('\n').slice(1)) {
+      const match = line.trim().match(/^(\d+)\s+(\S+)\s+(.+)$/);
+      if (!match) continue;
+
+      const pid = parseInt(match[1], 10);
+      const tty = match[2];
+      const comm = match[3];
+
+      if (tty === '??' || tty === '-') continue;
+
+      const baseName = comm.split('/').pop()?.replace(/^-/, '') || '';
+      if (!shellNames.has(baseName)) continue;
+      if (ownPids.has(pid)) continue;
+
+      candidates.push({ pid, tty, shell: baseName });
+    }
+
+    const results: ExternalTerminal[] = [];
+    for (const candidate of candidates) {
+      try {
+        const { stdout } = await execFileAsync('lsof', [
+          '-a', '-p', String(candidate.pid), '-d', 'cwd', '-Fn',
+        ]);
+        const cwdMatch = stdout.match(/\nn(.*)/);
+        if (cwdMatch && cwdMatch[1]) {
+          results.push({
+            pid: candidate.pid,
+            tty: candidate.tty,
+            shell: candidate.shell,
+            cwd: cwdMatch[1],
+          });
+        }
+      } catch {
+        // Skip processes we cannot inspect
+      }
+    }
+
+    // Deduplicate by CWD
+    const seen = new Set<string>();
+    return results.filter((t) => {
+      if (seen.has(t.cwd)) return false;
+      seen.add(t.cwd);
+      return true;
+    });
+  });
+
+  ipcMain.handle(IPC.PLAN_GET_FILES, async (_event, _cwd: string): Promise<PlanFile[]> => {
+    // Claude Code stores all plans globally in ~/.claude/plans/.
+    // Return all plan files so the renderer can track which are new.
+    const home = process.env.HOME || process.env.USERPROFILE || '';
+    if (!home) return [];
+    const plansDir = path.join(home, '.claude', 'plans');
+
+    try {
+      const entries = await fs.promises.readdir(plansDir, { withFileTypes: true });
+      const files: PlanFile[] = [];
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+        const filePath = path.join(plansDir, entry.name);
+        const stat = await fs.promises.stat(filePath);
+        files.push({ name: entry.name, path: filePath, modifiedAt: stat.mtimeMs });
+      }
+      return files;
+    } catch {
+      return [];
+    }
+  });
+
+  ipcMain.handle(IPC.PLAN_READ_FILE, async (_event, filePath: string): Promise<string> => {
+    if (!filePath.includes('.claude/plans/') && !filePath.includes('.claude\\plans\\')) return '';
+    if (!filePath.endsWith('.md')) return '';
+    try {
+      return await fs.promises.readFile(filePath, 'utf-8');
+    } catch {
+      return '';
+    }
   });
 
   ipcMain.handle(IPC.STATE_SAVE, (_event, state: SavedState) => {

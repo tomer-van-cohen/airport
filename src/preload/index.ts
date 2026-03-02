@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc-channels';
-import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, AirportApi, SessionInfo, SavedState } from '../shared/types';
+import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, SpawnRequestEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
 
 const api: AirportApi = {
   pty: {
@@ -42,10 +42,21 @@ const api: AirportApi = {
     ipcRenderer.on(IPC.STATE_REQUEST_SAVE, handler);
     return () => ipcRenderer.removeListener(IPC.STATE_REQUEST_SAVE, handler);
   },
+  discoverTerminals: (): Promise<ExternalTerminal[]> =>
+    ipcRenderer.invoke(IPC.DISCOVER_TERMINALS),
+  getPlanFiles: (cwd: string): Promise<PlanFile[]> =>
+    ipcRenderer.invoke(IPC.PLAN_GET_FILES, cwd),
+  readPlanFile: (path: string): Promise<string> =>
+    ipcRenderer.invoke(IPC.PLAN_READ_FILE, path),
   onHookStatus: (callback: (event: HookStatusEvent) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: HookStatusEvent) => callback(data);
     ipcRenderer.on(IPC.HOOK_STATUS, handler);
     return () => ipcRenderer.removeListener(IPC.HOOK_STATUS, handler);
+  },
+  onSpawnRequest: (callback: (event: SpawnRequestEvent) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: SpawnRequestEvent) => callback(data);
+    ipcRenderer.on(IPC.SPAWN_REQUEST, handler);
+    return () => ipcRenderer.removeListener(IPC.SPAWN_REQUEST, handler);
   },
 };
 

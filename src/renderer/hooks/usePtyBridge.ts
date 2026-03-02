@@ -17,6 +17,13 @@ const lastChunks = new Map<string, string>();
 const bellFlags = new Map<string, boolean>();
 const cachedCwds = new Map<string, string>();
 
+// Plan file tracking: maps session ID → the plan file path claimed by that session.
+// When a new file appears in ~/.claude/plans/ that no session has claimed,
+// it's assigned to the session that's currently busy (running Claude).
+const claimedPlans = new Map<string, string>();
+// All plan file paths we've ever seen, so we can detect new ones.
+let knownPlanPaths = new Set<string>();
+
 // Hook-reported status from Claude Code via file-based IPC.
 // This is the authoritative signal — when present it overrides heuristics.
 interface HookState {
@@ -77,7 +84,7 @@ function findDefault(lines: string[]): string {
 }
 
 export function usePtyBridge() {
-  const { addSession, removeSession, updateLastOutput, setSessionStandby, setSessionProcessName, setSessionStatus, setSessionTitle, setSessionGitInfo, setHookMessage, setHookDone, setWaitingQuestion } =
+  const { addSession, removeSession, updateLastOutput, setSessionStandby, setSessionProcessName, setSessionStatus, setSessionTitle, setSessionGitInfo, setSessionCwd, setHookMessage, setHookDone, setWaitingQuestion, setPlanFiles } =
     useTerminalStore();
   const pollIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const mainDimsRef = useRef({ cols: 80, rows: 24 });
@@ -112,6 +119,23 @@ export function usePtyBridge() {
       }
     });
 
+    // Listen for spawn requests from main process (file-based spawn protocol)
+    const unsubSpawn = window.airport.onSpawnRequest(async ({ title, cwd, command }) => {
+      const sessionId = await createSession({
+        cwd,
+        title: title || undefined,
+        customTitle: !!title,
+      });
+      useTerminalStore.getState().setActiveSession(sessionId);
+
+      if (command) {
+        // Single write — shell prompt is ready by now since createSession awaits PTY creation
+        setTimeout(() => {
+          window.airport.pty.write(sessionId, command + '\n');
+        }, 300);
+      }
+    });
+
     // Listen for hook status updates from main process (file-based IPC)
     const unsubHook = window.airport.onHookStatus(({ sessionId, state, message }) => {
       hookStates.set(sessionId, { state, message });
@@ -143,11 +167,50 @@ export function usePtyBridge() {
       bellFlags.delete(sessionId);
       cachedCwds.delete(sessionId);
       hookStates.delete(sessionId);
+      claimedPlans.delete(sessionId);
     });
 
-    // Polling: standby detection + git title updates
+    // Polling: standby detection + git title updates + plan detection
     pollIntervalRef.current = setInterval(async () => {
       const sessions = useTerminalStore.getState().sessions;
+
+      // --- Plan file detection (global, once per tick) ---
+      // Read all plan files from ~/.claude/plans/, detect new ones,
+      // and assign each new file to whichever session is currently busy.
+      try {
+        const allPlans = await window.airport.getPlanFiles('');
+        const currentPaths = new Set(allPlans.map((f) => f.path));
+
+        // Find newly appeared files (not in our known set)
+        for (const plan of allPlans) {
+          if (!knownPlanPaths.has(plan.path)) {
+            // New file — assign to the first session that's currently busy
+            const busySession = sessions.find((s) => hookStates.get(s.id)?.state === 'busy');
+            if (busySession) {
+              claimedPlans.set(busySession.id, plan.path);
+            }
+          }
+        }
+        knownPlanPaths = currentPaths;
+
+        // Update each session's planFiles based on its claimed plan
+        for (const session of sessions) {
+          const claimedPath = claimedPlans.get(session.id);
+          if (claimedPath) {
+            const match = allPlans.find((f) => f.path === claimedPath);
+            if (match) {
+              setPlanFiles(session.id, [match]);
+            } else {
+              // Plan file was deleted
+              claimedPlans.delete(session.id);
+              setPlanFiles(session.id, []);
+            }
+          } else if (session.planFiles.length > 0) {
+            setPlanFiles(session.id, []);
+          }
+        }
+      } catch { /* ignore */ }
+
       for (const session of sessions) {
         const processName = await window.airport.pty.getProcessName(session.id);
         setSessionProcessName(session.id, processName);
@@ -187,7 +250,10 @@ export function usePtyBridge() {
 
         try {
           const info = await window.airport.getSessionInfo(session.id);
-          if (info.cwd) cachedCwds.set(session.id, info.cwd);
+          if (info.cwd) {
+            cachedCwds.set(session.id, info.cwd);
+            if (session.cwd !== info.cwd) setSessionCwd(session.id, info.cwd);
+          }
           if (!session.customTitle && info.gitRepo && info.gitBranch) {
             const gitTitle = `${info.gitRepo}/${info.gitBranch}`;
             if (session.title !== gitTitle) {
@@ -196,7 +262,12 @@ export function usePtyBridge() {
             if (session.gitRepo !== info.gitRepo || session.gitBranch !== info.gitBranch) {
               setSessionGitInfo(session.id, info.gitRepo, info.gitBranch);
             }
-          } else if (session.gitRepo || session.gitBranch) {
+          } else if (info.cwd && (session.gitRepo || session.gitBranch)) {
+            // Only clear git info when we successfully resolved a cwd but
+            // found no git repo (user genuinely left a git directory).
+            // When cwd is empty the process-tree walk failed transiently
+            // (common while Claude spawns short-lived subprocesses) — keep
+            // the previously detected git info to avoid title blinking.
             setSessionGitInfo(session.id, '', '');
           }
         } catch { /* ignore */ }
@@ -217,6 +288,7 @@ export function usePtyBridge() {
 
     return () => {
       unsubData();
+      unsubSpawn();
       unsubHook();
       unsubExit();
       unsubSaveRequest();
@@ -227,7 +299,13 @@ export function usePtyBridge() {
 
   const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number }) => {
     const { cols, rows } = mainDimsRef.current;
-    const sessionId = await window.airport.pty.create({ cols, rows, cwd: options?.cwd });
+    // Inherit cwd from the active session when not explicitly provided
+    let cwd = options?.cwd;
+    if (!cwd) {
+      const activeId = useTerminalStore.getState().activeSessionId;
+      if (activeId) cwd = cachedCwds.get(activeId);
+    }
+    const sessionId = await window.airport.pty.create({ cols, rows, cwd });
     createShadowTerminal(sessionId, cols, rows);
 
     // If restoring a buffer, write it to the shadow terminal
@@ -250,6 +328,9 @@ export function usePtyBridge() {
       gitRepo: '',
       gitBranch: '',
       colorIndex: options?.colorIndex ?? store.nextColorIndex,
+      backlog: false,
+      cwd: cwd || '',
+      planFiles: [],
     });
     saveAllSessions();
     return sessionId;
@@ -264,6 +345,7 @@ export function usePtyBridge() {
     bellFlags.delete(sessionId);
     cachedCwds.delete(sessionId);
     hookStates.delete(sessionId);
+    claimedPlans.delete(sessionId);
     saveAllSessions();
   };
 
@@ -286,6 +368,7 @@ export function usePtyBridge() {
       cwd: cachedCwds.get(session.id) || '',
       buffer: serializeShadowBuffer(session.id),
       colorIndex: session.colorIndex,
+      backlog: session.backlog || undefined,
     }));
 
     const activeIndex = sessions.findIndex((s) => s.id === activeSessionId);
@@ -305,6 +388,9 @@ export function usePtyBridge() {
         buffer: saved.buffer,
         colorIndex: saved.colorIndex,
       });
+      if (saved.backlog) {
+        useTerminalStore.getState().updateSession(id, { backlog: true });
+      }
       newIds.push(id);
     }
 

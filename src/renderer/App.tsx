@@ -3,6 +3,8 @@ import { TitleBar } from './components/TitleBar';
 import { MainTerminal } from './components/MainTerminal';
 import { TerminalSquareGrid } from './components/TerminalSquareGrid';
 import { SessionControls } from './components/SessionControls';
+import { OnboardingScreen } from './components/OnboardingScreen';
+import { PlanReviewPanel } from './components/PlanReviewPanel';
 import { useTerminalStore } from './store/terminal-store';
 import { usePtyBridge } from './hooks/usePtyBridge';
 
@@ -11,24 +13,36 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 600;
 
 export function App() {
-  const { sessions, activeSessionId, setActiveSession } = useTerminalStore();
+  const { sessions, activeSessionId, previousSessionId, setActiveSession, planViewSessionId, planViewPath } = useTerminalStore();
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
 
-  // Restore previous state or create initial session
+  // Restore previous state (no auto-create — show onboarding if empty)
   useEffect(() => {
-    (async () => {
-      const restored = await restoreState();
-      if (!restored) {
-        await createSession();
-      }
-    })();
+    restoreState();
   }, []);
 
   const handleNewSession = useCallback(async () => {
     const id = await createSession();
     useTerminalStore.getState().setActiveSession(id);
+  }, [createSession]);
+
+  const handleAdoptTerminals = useCallback(async () => {
+    const terminals = await window.airport.discoverTerminals();
+    if (terminals.length === 0) return;
+
+    let firstId: string | null = null;
+    for (const terminal of terminals) {
+      const id = await createSession({
+        cwd: terminal.cwd,
+        title: terminal.cwd.split('/').pop() || terminal.shell,
+      });
+      if (!firstId) firstId = id;
+    }
+    if (firstId) {
+      useTerminalStore.getState().setActiveSession(firstId);
+    }
   }, [createSession]);
 
   const handleDimensions = useCallback(
@@ -73,40 +87,56 @@ export function App() {
 
       if (e.metaKey && e.key === 'w') {
         e.preventDefault();
-        if (activeSessionId && sessions.length > 1) {
+        if (activeSessionId) {
           closeSession(activeSessionId);
+        }
+        return;
+      }
+
+      if (e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault();
+        if (previousSessionId && sessions.some((s) => s.id === previousSessionId)) {
+          setActiveSession(previousSessionId);
         }
         return;
       }
 
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
+        const visible = sessions.filter((s) => !s.backlog);
         const idx = parseInt(e.key) - 1;
-        if (idx < sessions.length) {
-          setActiveSession(sessions[idx].id);
+        if (idx < visible.length) {
+          setActiveSession(visible[idx].id);
         }
         return;
       }
 
       if (e.metaKey && e.key === ']') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        setActiveSession(sessions[(idx + 1) % sessions.length].id);
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        if (visible.length > 0) {
+          setActiveSession(visible[(idx + 1) % visible.length].id);
+        }
         return;
       }
 
       if (e.metaKey && e.key === '[') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        setActiveSession(sessions[(idx - 1 + sessions.length) % sessions.length].id);
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        if (visible.length > 0) {
+          setActiveSession(visible[(idx - 1 + visible.length) % visible.length].id);
+        }
         return;
       }
 
       if (e.metaKey && e.key === 'j') {
         e.preventDefault();
-        const idx = sessions.findIndex((s) => s.id === activeSessionId);
-        for (let i = 1; i <= sessions.length; i++) {
-          const candidate = sessions[(idx + i) % sessions.length];
+        const visible = sessions.filter((s) => !s.backlog);
+        const idx = visible.findIndex((s) => s.id === activeSessionId);
+        for (let i = 1; i <= visible.length; i++) {
+          const candidate = visible[(idx + i) % visible.length];
           if (candidate.hookDone) {
             setActiveSession(candidate.id);
             break;
@@ -134,7 +164,7 @@ export function App() {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        background: '#1e1e2e',
+        background: '#000000',
       }}
     >
       <TitleBar />
@@ -146,14 +176,24 @@ export function App() {
           overflow: 'hidden',
         }}
       >
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          {activeSessionId && (
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex' }}>
+          {sessions.length === 0 ? (
+            <OnboardingScreen
+              onNewSession={handleNewSession}
+              onAdoptTerminals={handleAdoptTerminals}
+            />
+          ) : planViewSessionId && planViewPath ? (
+            <PlanReviewPanel
+              sessionId={planViewSessionId}
+              planPath={planViewPath}
+            />
+          ) : activeSessionId ? (
             <MainTerminal
               key={activeSessionId}
               sessionId={activeSessionId}
               onDimensions={handleDimensions}
             />
-          )}
+          ) : null}
         </div>
 
         {/* Drag handle */}
@@ -192,7 +232,7 @@ export function App() {
           <TerminalSquareGrid
             onClose={closeSession}
           />
-          <SessionControls onNewSession={handleNewSession} />
+          <SessionControls onNewSession={handleNewSession} onAdoptTerminals={handleAdoptTerminals} />
         </div>
       </div>
     </div>

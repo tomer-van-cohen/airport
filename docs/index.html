@@ -100,13 +100,20 @@
       letter-spacing: 0.02em;
     }
     .hero h1 {
-      font-size: clamp(40px, 6vw, 64px);
+      font-size: clamp(56px, 8vw, 88px);
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.1;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
     }
     .hero h1 .accent { color: var(--blue); }
+    .hero .slogan {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 400;
+      color: var(--subtext);
+      letter-spacing: 0.01em;
+      margin-bottom: 20px;
+    }
     .hero .subtitle {
       font-size: clamp(16px, 2.5vw, 20px);
       color: var(--subtext);
@@ -423,10 +430,11 @@
   <section class="hero">
     <div class="container">
       <div class="badge">Open Source &middot; MIT License</div>
-      <h1>Terminal multiplexer<br>for <span class="accent">AI coding CLIs</span></h1>
+      <h1><span class="accent">Airport</span></h1>
+      <h2 class="slogan">Where AI agents take off</h2>
       <p class="subtitle">
-        Run multiple Claude Code sessions side-by-side with live status previews.
-        Always know which session needs your attention.
+        One window for all your coding agents. See every session, know what needs
+        your attention, and keep them all running side-by-side.
       </p>
 
       <div class="install-box" onclick="copyInstall()" id="installBox">
@@ -446,23 +454,23 @@
   <section class="features" id="features">
     <div class="container">
       <p class="section-label">Features</p>
-      <h2>Everything you need to run<br>parallel AI sessions</h2>
+      <h2>Stop hunting for windows</h2>
 
       <div class="feature-grid">
         <div class="feature-card">
           <div class="feature-icon">&#9638;</div>
-          <h3>Multi-session</h3>
-          <p>Spawn as many Claude Code sessions as you need. Each runs in its own PTY with a full terminal emulator. Switch between them instantly.</p>
+          <h3>One window. Full picture.</h3>
+          <p>No more hunting through scattered terminal windows. All your agent sessions live in a single view. Always oriented, never lost.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#9679;</div>
-          <h3>Live status previews</h3>
-          <p>See what every session is doing at a glance &mdash; "Reading App.tsx", "Running tests", or "Waiting for input" &mdash; without switching to it.</p>
+          <h3>Know which agents need you</h3>
+          <p>See every agent's status at a glance &mdash; active, working, or waiting for input. Instantly spot which sessions require your attention without switching between them.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#10094;&#10095;</div>
-          <h3>Claude Code hooks</h3>
-          <p>Hooks are auto-installed on launch. Airport reads Claude Code's tool activity in real-time so status is always accurate, never heuristic.</p>
+          <h3>Run tasks in parallel</h3>
+          <p>Sift through your coding agents and continuously run tasks side-by-side. Spawn new sessions, keep them all going, and stay in control.</p>
         </div>
       </div>
     </div>

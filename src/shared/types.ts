@@ -1,3 +1,9 @@
+export interface PlanFile {
+  name: string;
+  path: string;
+  modifiedAt: number;
+}
+
 export interface TerminalSession {
   id: string;
   title: string;
@@ -12,6 +18,9 @@ export interface TerminalSession {
   gitRepo: string;
   gitBranch: string;
   colorIndex: number;
+  backlog: boolean;
+  cwd: string;
+  planFiles: PlanFile[];
 }
 
 export type SessionStatus =
@@ -53,6 +62,7 @@ export interface SavedSession {
   cwd: string;
   buffer: string;
   colorIndex: number;
+  backlog?: boolean;
 }
 
 export interface SavedState {
@@ -64,6 +74,19 @@ export interface HookStatusEvent {
   sessionId: string;
   state: 'busy' | 'done';
   message: string;
+}
+
+export interface SpawnRequestEvent {
+  title?: string;
+  cwd?: string;
+  command?: string;
+}
+
+export interface ExternalTerminal {
+  pid: number;
+  tty: string;
+  shell: string;
+  cwd: string;
 }
 
 export interface AirportApi {
@@ -81,6 +104,10 @@ export interface AirportApi {
   loadState: () => Promise<SavedState | null>;
   onRequestSave: (callback: () => void) => () => void;
   onHookStatus: (callback: (event: HookStatusEvent) => void) => () => void;
+  onSpawnRequest: (callback: (event: SpawnRequestEvent) => void) => () => void;
+  discoverTerminals: () => Promise<ExternalTerminal[]>;
+  getPlanFiles: (cwd: string) => Promise<PlanFile[]>;
+  readPlanFile: (path: string) => Promise<string>;
 }
 
 declare global {

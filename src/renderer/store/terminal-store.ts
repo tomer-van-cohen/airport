@@ -1,10 +1,13 @@
 import { create } from 'zustand';
-import type { TerminalSession, SessionStatus } from '../../shared/types';
+import type { TerminalSession, SessionStatus, PlanFile } from '../../shared/types';
 
 interface TerminalStore {
   sessions: TerminalSession[];
   activeSessionId: string | null;
+  previousSessionId: string | null;
   nextColorIndex: number;
+  planViewSessionId: string | null;
+  planViewPath: string | null;
 
   addSession: (session: TerminalSession) => void;
   removeSession: (id: string) => void;
@@ -15,21 +18,30 @@ interface TerminalStore {
   setSessionProcessName: (id: string, processName: string) => void;
   setSessionTitle: (id: string, title: string, custom?: boolean) => void;
   setSessionGitInfo: (id: string, gitRepo: string, gitBranch: string) => void;
+  setSessionCwd: (id: string, cwd: string) => void;
   setHookMessage: (id: string, hookMessage: string) => void;
   setHookDone: (id: string, hookDone: boolean) => void;
   setWaitingQuestion: (id: string, waitingQuestion: string) => void;
   updateLastOutput: (id: string) => void;
   reorderSession: (fromIndex: number, toIndex: number) => void;
+  moveToBacklog: (id: string) => void;
+  restoreFromBacklog: (id: string, insertIndex?: number) => void;
+  setPlanFiles: (id: string, planFiles: PlanFile[]) => void;
+  viewPlan: (sessionId: string, path: string) => void;
+  closePlanView: () => void;
 }
 
 export const useTerminalStore = create<TerminalStore>((set) => ({
   sessions: [],
   activeSessionId: null,
+  previousSessionId: null,
   nextColorIndex: 0,
+  planViewSessionId: null,
+  planViewPath: null,
 
   addSession: (session) =>
     set((state) => ({
-      sessions: [...state.sessions, { ...session, colorIndex: session.colorIndex ?? state.nextColorIndex }],
+      sessions: [...state.sessions, { ...session, backlog: session.backlog ?? false, colorIndex: session.colorIndex ?? state.nextColorIndex }],
       activeSessionId: state.activeSessionId ?? session.id,
       nextColorIndex: Math.max(state.nextColorIndex, (session.colorIndex ?? state.nextColorIndex) + 1),
     })),
@@ -41,10 +53,20 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       if (activeSessionId === id) {
         activeSessionId = sessions.length > 0 ? sessions[sessions.length - 1].id : null;
       }
-      return { sessions, activeSessionId };
+      const clearPlan = state.planViewSessionId === id;
+      return {
+        sessions,
+        activeSessionId,
+        ...(clearPlan ? { planViewSessionId: null, planViewPath: null } : {}),
+      };
     }),
 
-  setActiveSession: (id) => set({ activeSessionId: id }),
+  setActiveSession: (id) => set((state) => ({
+    activeSessionId: id,
+    previousSessionId: state.activeSessionId !== id ? state.activeSessionId : state.previousSessionId,
+    planViewSessionId: null,
+    planViewPath: null,
+  })),
 
   updateSession: (id, updates) =>
     set((state) => ({
@@ -85,6 +107,13 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
     set((state) => ({
       sessions: state.sessions.map((s) =>
         s.id === id ? { ...s, gitRepo, gitBranch } : s
+      ),
+    })),
+
+  setSessionCwd: (id, cwd) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, cwd } : s
       ),
     })),
 
@@ -132,4 +161,47 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       sessions.splice(toIndex, 0, moved);
       return { sessions };
     }),
+
+  moveToBacklog: (id) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, backlog: true } : s
+      ),
+    })),
+
+  restoreFromBacklog: (id, insertIndex) =>
+    set((state) => {
+      const sessions = [...state.sessions];
+      const idx = sessions.findIndex((s) => s.id === id);
+      if (idx === -1) return state;
+      const [moved] = sessions.splice(idx, 1);
+      moved.backlog = false;
+      if (insertIndex !== undefined && insertIndex >= 0) {
+        sessions.splice(insertIndex, 0, moved);
+      } else {
+        // Insert at end of normal sessions (before first backlog session)
+        const firstBacklogIdx = sessions.findIndex((s) => s.backlog);
+        sessions.splice(firstBacklogIdx === -1 ? sessions.length : firstBacklogIdx, 0, moved);
+      }
+      return { sessions };
+    }),
+
+  setPlanFiles: (id, planFiles) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, planFiles } : s
+      ),
+    })),
+
+  viewPlan: (sessionId, path) =>
+    set(() => ({
+      planViewSessionId: sessionId,
+      planViewPath: path,
+    })),
+
+  closePlanView: () =>
+    set(() => ({
+      planViewSessionId: null,
+      planViewPath: null,
+    })),
 }));

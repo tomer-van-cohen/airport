@@ -11,4 +11,8 @@ export const IPC = {
   STATE_LOAD: 'state:load',
   STATE_REQUEST_SAVE: 'state:requestSave',
   HOOK_STATUS: 'hook:status',
+  SPAWN_REQUEST: 'spawn:request',
+  DISCOVER_TERMINALS: 'terminals:discover',
+  PLAN_GET_FILES: 'plan:getFiles',
+  PLAN_READ_FILE: 'plan:readFile',
 } as const;
