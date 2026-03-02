@@ -76,6 +76,12 @@ export interface HookStatusEvent {
   message: string;
 }
 
+export interface SpawnRequestEvent {
+  title?: string;
+  cwd?: string;
+  command?: string;
+}
+
 export interface ExternalTerminal {
   pid: number;
   tty: string;
@@ -98,6 +104,7 @@ export interface AirportApi {
   loadState: () => Promise<SavedState | null>;
   onRequestSave: (callback: () => void) => () => void;
   onHookStatus: (callback: (event: HookStatusEvent) => void) => () => void;
+  onSpawnRequest: (callback: (event: SpawnRequestEvent) => void) => () => void;
   discoverTerminals: () => Promise<ExternalTerminal[]>;
   getPlanFiles: (cwd: string) => Promise<PlanFile[]>;
   readPlanFile: (path: string) => Promise<string>;

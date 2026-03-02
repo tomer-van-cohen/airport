@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+#
+# airport-spawn — Request a new Airport terminal tab from within a session.
+#
+# Usage:
+#   airport-spawn [--cwd DIR] [--title TITLE] [--command CMD]
+#
+# Writes a .spawn JSON file that Airport's hook-watcher picks up to create
+# a new PTY session in its own tab.
+
+set -euo pipefail
+
+if [ -z "${AIRPORT_SPAWN_DIR:-}" ]; then
+  echo "Error: AIRPORT_SPAWN_DIR is not set. This script must be run from within an Airport terminal session." >&2
+  exit 1
+fi
+
+if [ ! -d "$AIRPORT_SPAWN_DIR" ]; then
+  echo "Error: Spawn directory $AIRPORT_SPAWN_DIR does not exist. Is Airport running?" >&2
+  exit 1
+fi
+
+CWD=""
+TITLE=""
+COMMAND=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --cwd)
+      CWD="$2"
+      shift 2
+      ;;
+    --title)
+      TITLE="$2"
+      shift 2
+      ;;
+    --command)
+      COMMAND="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      echo "Usage: airport-spawn [--cwd DIR] [--title TITLE] [--command CMD]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Helper to JSON-escape a string value
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | \
+    awk '{ if (NR>1) printf "\\n"; printf "%s", $0 }'
+}
+
+# Build JSON manually to avoid jq dependency
+JSON="{"
+FIRST=true
+
+if [ -n "$CWD" ]; then
+  JSON="${JSON}\"cwd\":\"$(json_escape "$CWD")\""
+  FIRST=false
+fi
+
+if [ -n "$TITLE" ]; then
+  if [ "$FIRST" = false ]; then JSON="${JSON},"; fi
+  JSON="${JSON}\"title\":\"$(json_escape "$TITLE")\""
+  FIRST=false
+fi
+
+if [ -n "$COMMAND" ]; then
+  if [ "$FIRST" = false ]; then JSON="${JSON},"; fi
+  JSON="${JSON}\"command\":\"$(json_escape "$COMMAND")\""
+fi
+
+JSON="${JSON}}"
+
+SPAWN_FILE="${AIRPORT_SPAWN_DIR}/$(date +%s)-$$.spawn"
+printf '%s' "$JSON" > "$SPAWN_FILE"

@@ -83,6 +83,59 @@ if (installed > 0) {
   console.log('✓ Airport hooks already up to date');
 }
 
+// --- Global CLAUDE.md: teach Claude about airport-spawn ---
+const claudeMdPath = join(claudeDir, 'CLAUDE.md');
+const SPAWN_START = '<!-- airport-spawn -->';
+const SPAWN_END = '<!-- /airport-spawn -->';
+const SPAWN_BLOCK = `${SPAWN_START}
+## Airport Agent Spawning
+
+**IMPORTANT: This section ONLY applies when the \`AIRPORT\` environment variable is set (i.e., you are running inside Airport terminal multiplexer). If \`$AIRPORT\` is not set, ignore this section entirely.**
+
+You can spawn parallel agent sessions — each in its own Airport tab with its own git worktree. **Only do this when the user explicitly asks to spawn agents or work in parallel** (e.g., "spawn agents for these tasks", "do these in parallel", "run these as separate agents"). Never spawn agents on your own initiative — if the user gives you multiple tasks without asking for parallel execution, do them sequentially in the current session.
+
+To spawn an agent:
+
+\`\`\`bash
+git worktree add .claude/worktrees/<branch-name> -b <branch-name>
+airport-spawn \\
+  --cwd "$(pwd)/.claude/worktrees/<branch-name>" \\
+  --command "claude --dangerously-skip-permissions '<task prompt>. Create a plan first and wait for my approval before implementing.'"
+\`\`\`
+
+Do not pass --title — the tab will automatically show the git repo and branch name from the worktree.
+Pass the full prompt as an argument to claude (not -p) so it starts an interactive session with the task.
+${SPAWN_END}`;
+
+let claudeMd = '';
+try { claudeMd = readFileSync(claudeMdPath, 'utf-8'); } catch { /* doesn't exist yet */ }
+
+const startIdx = claudeMd.indexOf(SPAWN_START);
+const endIdx = claudeMd.indexOf(SPAWN_END);
+
+if (startIdx === -1) {
+  // Append block (with a leading newline if file has existing content)
+  const separator = claudeMd.length > 0 && !claudeMd.endsWith('\n') ? '\n\n' : claudeMd.length > 0 ? '\n' : '';
+  writeFileSync(claudeMdPath, claudeMd + separator + SPAWN_BLOCK + '\n');
+  console.log(`✓ Airport agent-spawn instructions added to ${claudeMdPath}`);
+} else if (endIdx !== -1) {
+  // Replace between markers
+  const before = claudeMd.slice(0, startIdx);
+  const after = claudeMd.slice(endIdx + SPAWN_END.length);
+  const updated = before + SPAWN_BLOCK + after;
+  if (updated !== claudeMd) {
+    writeFileSync(claudeMdPath, updated);
+    console.log(`✓ Airport agent-spawn instructions updated in ${claudeMdPath}`);
+  } else {
+    console.log('✓ Airport agent-spawn instructions already up to date');
+  }
+} else {
+  // Start marker exists but no end marker (corrupted) — replace from start to EOF
+  const before = claudeMd.slice(0, startIdx);
+  writeFileSync(claudeMdPath, before + SPAWN_BLOCK + '\n');
+  console.log(`✓ Airport agent-spawn instructions repaired in ${claudeMdPath}`);
+}
+
 // --- Worktree support: symlink node_modules from main repo ---
 const localNM = join(projectRoot, 'node_modules');
 try {

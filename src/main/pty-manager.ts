@@ -11,6 +11,7 @@ interface PtySession {
 }
 
 const STATUS_DIR = path.join(os.tmpdir(), `airport-${process.pid}`);
+const BIN_DIR = path.join(__dirname, '..', '..', 'bin');
 
 export class PtyManager {
   private sessions = new Map<string, PtySession>();
@@ -29,6 +30,7 @@ export class PtyManager {
     const statusFile = path.join(STATUS_DIR, `${id}.status`);
     const shell = process.env.SHELL || '/bin/zsh';
 
+    const existingPath = process.env.PATH || '';
     const proc = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: options.cols,
@@ -41,7 +43,10 @@ export class PtyManager {
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
         AIRPORT: '1',
+        AIRPORT_PID: String(process.pid),
+        AIRPORT_SPAWN_DIR: STATUS_DIR,
         AIRPORT_STATUS_FILE: statusFile,
+        PATH: `${BIN_DIR}:${existingPath}`,
       } as Record<string, string>,
     });
 

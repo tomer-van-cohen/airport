@@ -5,7 +5,8 @@
   "description": "Terminal multiplexer for AI coding CLIs",
   "main": ".vite/build/main.js",
   "bin": {
-    "airport-ai": "bin/airport.js"
+    "airport-ai": "bin/airport.js",
+    "airport-spawn": "bin/airport-spawn"
   },
   "files": [
     "bin/",

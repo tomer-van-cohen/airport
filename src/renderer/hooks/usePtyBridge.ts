@@ -119,6 +119,23 @@ export function usePtyBridge() {
       }
     });
 
+    // Listen for spawn requests from main process (file-based spawn protocol)
+    const unsubSpawn = window.airport.onSpawnRequest(async ({ title, cwd, command }) => {
+      const sessionId = await createSession({
+        cwd,
+        title: title || undefined,
+        customTitle: !!title,
+      });
+      useTerminalStore.getState().setActiveSession(sessionId);
+
+      if (command) {
+        // Single write — shell prompt is ready by now since createSession awaits PTY creation
+        setTimeout(() => {
+          window.airport.pty.write(sessionId, command + '\n');
+        }, 300);
+      }
+    });
+
     // Listen for hook status updates from main process (file-based IPC)
     const unsubHook = window.airport.onHookStatus(({ sessionId, state, message }) => {
       hookStates.set(sessionId, { state, message });
@@ -266,6 +283,7 @@ export function usePtyBridge() {
 
     return () => {
       unsubData();
+      unsubSpawn();
       unsubHook();
       unsubExit();
       unsubSaveRequest();

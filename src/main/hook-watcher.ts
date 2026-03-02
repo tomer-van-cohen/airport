@@ -10,6 +10,9 @@ import { IPC } from '../shared/ipc-channels';
  * Each PTY session has a file at /tmp/airport-{pid}/{sessionId}.status
  * Hook scripts write "busy;message" or "done;message" to these files.
  *
+ * Also watches for .spawn files written by the airport-spawn script.
+ * These request creation of new terminal tabs from within existing sessions.
+ *
  * Uses fs.watch on the status directory for near-instant detection (~ms),
  * with a slow polling fallback as a safety net for missed events.
  */
@@ -46,13 +49,51 @@ export function startHookWatcher(
     }
   }
 
-  // fs.watch on the directory: OS notifies us the moment any .status file changes
+  // Guard against macOS fs.watch firing duplicate events for the same file
+  const processedSpawns = new Set<string>();
+
+  function processSpawnFile(filePath: string) {
+    const basename = path.basename(filePath);
+    if (processedSpawns.has(basename)) return;
+    processedSpawns.add(basename);
+    // Clean up after a short delay to avoid unbounded growth
+    setTimeout(() => processedSpawns.delete(basename), 5000);
+
+    const win = getWindow();
+    if (!win || win.isDestroyed()) return;
+
+    let raw: string;
+    try {
+      raw = fs.readFileSync(filePath, 'utf-8').trim();
+      fs.unlinkSync(filePath);
+    } catch {
+      return;
+    }
+
+    let request: { cwd?: string; command?: string; title?: string };
+    try {
+      request = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    // Forward to renderer — it owns PTY + shadow terminal creation
+    win.webContents.send(IPC.SPAWN_REQUEST, {
+      title: request.title,
+      cwd: request.cwd,
+      command: request.command,
+    });
+  }
+
+  // fs.watch on the directory: OS notifies us the moment any file changes
   let dirWatcher: fs.FSWatcher | undefined;
   try {
     dirWatcher = fs.watch(STATUS_DIR, (_event, filename) => {
       if (filename && filename.endsWith('.status')) {
         const sessionId = filename.slice(0, -7); // strip '.status'
         processSession(sessionId);
+      } else if (filename && filename.endsWith('.spawn')) {
+        processSpawnFile(path.join(STATUS_DIR, filename));
       } else {
         // filename can be null on some platforms — scan all sessions
         for (const sessionId of ptyManager.getAllSessionIds()) {
