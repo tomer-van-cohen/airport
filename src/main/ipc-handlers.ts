@@ -27,7 +27,11 @@ async function getDeepestDescendant(pid: number): Promise<number> {
   }
 }
 
-export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => BrowserWindow | null): void {
+export function registerIpcHandlers(
+  ptyManager: PtyManager,
+  getWindow: () => BrowserWindow | null,
+  onStateSaved?: (state: SavedState) => void,
+): void {
   ipcMain.handle(IPC.PTY_CREATE, (_event, options: PtyCreateOptions) => {
     return ptyManager.create(
       options,
@@ -187,6 +191,7 @@ export function registerIpcHandlers(ptyManager: PtyManager, getWindow: () => Bro
 
   ipcMain.handle(IPC.STATE_SAVE, (_event, state: SavedState) => {
     saveState(state);
+    onStateSaved?.(state);
   });
 
   ipcMain.handle(IPC.STATE_LOAD, () => {

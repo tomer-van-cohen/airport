@@ -5,6 +5,8 @@ import { PtyManager } from './pty-manager';
 import { registerIpcHandlers } from './ipc-handlers';
 import { setupMenu } from './menu';
 import { IPC } from '../shared/ipc-channels';
+import { SavedState } from '../shared/types';
+import { saveState } from './state-manager';
 import { startHookWatcher } from './hook-watcher';
 
 if (started) {
@@ -24,6 +26,7 @@ if (!gotLock) {
   const ptyManager = new PtyManager();
   let mainWindow: BrowserWindow | null = null;
   let stateSaved = false;
+  let lastSavedState: SavedState | null = null;
 
   const createWindow = () => {
     mainWindow = new BrowserWindow({
@@ -72,8 +75,21 @@ if (!gotLock) {
     });
   };
 
-  registerIpcHandlers(ptyManager, () => mainWindow);
+  registerIpcHandlers(ptyManager, () => mainWindow, (state) => {
+    lastSavedState = state;
+  });
   const stopHookWatcher = startHookWatcher(ptyManager, () => mainWindow);
+
+  // Handle SIGINT/SIGTERM (e.g. Ctrl+C on `npx airport-ai`).
+  // The renderer is likely already dead, so save the last-known state synchronously.
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.on(signal, () => {
+      try { if (lastSavedState) saveState(lastSavedState); } catch { /* ignore */ }
+      try { stopHookWatcher(); } catch { /* ignore */ }
+      try { ptyManager.closeAll(); } catch { /* ignore */ }
+      process.exit(0);
+    });
+  }
 
   app.on('second-instance', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
