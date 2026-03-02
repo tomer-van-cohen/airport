@@ -7,7 +7,9 @@ const STATE_FILE = path.join(app.getPath('userData'), 'session-state.json');
 
 export function saveState(state: SavedState): void {
   try {
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state), 'utf-8');
+    const tmp = `${STATE_FILE}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(state), 'utf-8');
+    fs.renameSync(tmp, STATE_FILE);
   } catch {
     // ignore write errors
   }

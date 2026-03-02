@@ -210,12 +210,18 @@ export function usePtyBridge() {
       saveAllSessions();
     });
 
+    // Periodic auto-save every 30s so state survives ungraceful kills (e.g. Ctrl+C on npx)
+    const autoSaveInterval = setInterval(() => {
+      saveAllSessions();
+    }, 30_000);
+
     return () => {
       unsubData();
       unsubHook();
       unsubExit();
       unsubSaveRequest();
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      clearInterval(autoSaveInterval);
     };
   }, []);
 
@@ -245,6 +251,7 @@ export function usePtyBridge() {
       gitBranch: '',
       colorIndex: options?.colorIndex ?? store.nextColorIndex,
     });
+    saveAllSessions();
     return sessionId;
   };
 
@@ -257,6 +264,7 @@ export function usePtyBridge() {
     bellFlags.delete(sessionId);
     cachedCwds.delete(sessionId);
     hookStates.delete(sessionId);
+    saveAllSessions();
   };
 
   const setMainDimensions = (cols: number, rows: number) => {
