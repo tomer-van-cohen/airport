@@ -5,15 +5,16 @@ import { useTerminalStore } from '../store/terminal-store';
 
 interface TerminalSquareGridProps {
   onClose: (sessionId: string) => void;
+  workspaceId: string;
 }
 
 type DragSource = { sessionId: string; zone: 'normal' | 'backlog'; globalIndex: number };
 
-export function TerminalSquareGrid({ onClose }: TerminalSquareGridProps) {
+export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridProps) {
   const { sessions, activeSessionId, setActiveSession, reorderSession, moveToBacklog, restoreFromBacklog } = useTerminalStore();
 
-  const normalSessions = sessions.filter((s) => !s.backlog);
-  const backlogSessions = sessions.filter((s) => s.backlog);
+  const normalSessions = sessions.filter((s) => !s.backlog && s.workspaceId === workspaceId);
+  const backlogSessions = sessions.filter((s) => s.backlog && s.workspaceId === workspaceId);
 
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
   const [dropTarget, setDropTarget] = useState<{ zone: 'normal' | 'backlog' | 'backlog-header'; index: number } | null>(null);

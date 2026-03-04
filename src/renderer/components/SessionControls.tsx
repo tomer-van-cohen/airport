@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTerminalStore } from '../store/terminal-store';
 
 interface SessionControlsProps {
   onNewSession: () => void;
@@ -6,6 +7,7 @@ interface SessionControlsProps {
 }
 
 export function SessionControls({ onNewSession, onAdoptTerminals }: SessionControlsProps) {
+  const { workspaces, activeWorkspaceId, addWorkspace, removeWorkspace } = useTerminalStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +91,61 @@ export function SessionControls({ onNewSession, onAdoptTerminals }: SessionContr
             boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.3)',
           }}
         >
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              addWorkspace();
+            }}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              background: 'transparent',
+              color: '#cdd6f4',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+              textAlign: 'left',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = '#45475a';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+            }}
+          >
+            New Workspace
+          </button>
+          {workspaces.length > 1 && (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                removeWorkspace(activeWorkspaceId);
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                background: 'transparent',
+                color: '#f38ba8',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                textAlign: 'left',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = '#45475a';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              Delete Workspace
+            </button>
+          )}
+          <div style={{ height: 1, background: '#45475a', margin: '0' }} />
           <button
             onClick={() => {
               setMenuOpen(false);

@@ -4,6 +4,11 @@ export interface PlanFile {
   modifiedAt: number;
 }
 
+export interface Workspace {
+  id: string;
+  name: string;
+}
+
 export interface TerminalSession {
   id: string;
   title: string;
@@ -21,6 +26,7 @@ export interface TerminalSession {
   backlog: boolean;
   cwd: string;
   planFiles: PlanFile[];
+  workspaceId: string;
 }
 
 export type SessionStatus =
@@ -63,11 +69,14 @@ export interface SavedSession {
   buffer: string;
   colorIndex: number;
   backlog?: boolean;
+  workspaceId?: string;
 }
 
 export interface SavedState {
   sessions: SavedSession[];
   activeIndex: number;
+  workspaces?: Workspace[];
+  activeWorkspaceId?: string;
 }
 
 export interface HookStatusEvent {

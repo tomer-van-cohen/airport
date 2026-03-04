@@ -1,10 +1,11 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { MainTerminal } from './components/MainTerminal';
-import { TerminalSquareGrid } from './components/TerminalSquareGrid';
 import { SessionControls } from './components/SessionControls';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { PlanReviewPanel } from './components/PlanReviewPanel';
+import { WorkspaceDots } from './components/WorkspaceDots';
+import { WorkspaceContainer } from './components/WorkspaceContainer';
 import { useTerminalStore } from './store/terminal-store';
 import { usePtyBridge } from './hooks/usePtyBridge';
 
@@ -13,10 +14,11 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 600;
 
 export function App() {
-  const { sessions, activeSessionId, previousSessionId, setActiveSession, planViewSessionId, planViewPath } = useTerminalStore();
+  const { sessions, activeSessionId, previousSessionId, setActiveSession, planViewSessionId, planViewPath, workspaces, activeWorkspaceId, setActiveWorkspace } = useTerminalStore();
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Restore previous state (no auto-create — show onboarding if empty)
   useEffect(() => {
@@ -101,9 +103,30 @@ export function App() {
         return;
       }
 
+      // Workspace switching: Ctrl+Cmd+] / Ctrl+Cmd+[
+      if (e.ctrlKey && e.metaKey && e.key === ']') {
+        e.preventDefault();
+        const idx = workspaces.findIndex((w) => w.id === activeWorkspaceId);
+        if (workspaces.length > 1) {
+          setActiveWorkspace(workspaces[(idx + 1) % workspaces.length].id);
+        }
+        return;
+      }
+
+      if (e.ctrlKey && e.metaKey && e.key === '[') {
+        e.preventDefault();
+        const idx = workspaces.findIndex((w) => w.id === activeWorkspaceId);
+        if (workspaces.length > 1) {
+          setActiveWorkspace(workspaces[(idx - 1 + workspaces.length) % workspaces.length].id);
+        }
+        return;
+      }
+
+      // Session shortcuts scoped to active workspace
+      const visible = sessions.filter((s) => !s.backlog && s.workspaceId === activeWorkspaceId);
+
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
-        const visible = sessions.filter((s) => !s.backlog);
         const idx = parseInt(e.key) - 1;
         if (idx < visible.length) {
           setActiveSession(visible[idx].id);
@@ -113,7 +136,6 @@ export function App() {
 
       if (e.metaKey && e.key === ']') {
         e.preventDefault();
-        const visible = sessions.filter((s) => !s.backlog);
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         if (visible.length > 0) {
           setActiveSession(visible[(idx + 1) % visible.length].id);
@@ -123,7 +145,6 @@ export function App() {
 
       if (e.metaKey && e.key === '[') {
         e.preventDefault();
-        const visible = sessions.filter((s) => !s.backlog);
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         if (visible.length > 0) {
           setActiveSession(visible[(idx - 1 + visible.length) % visible.length].id);
@@ -133,7 +154,6 @@ export function App() {
 
       if (e.metaKey && e.key === 'j') {
         e.preventDefault();
-        const visible = sessions.filter((s) => !s.backlog);
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         for (let i = 1; i <= visible.length; i++) {
           const candidate = visible[(idx + i) % visible.length];
@@ -156,7 +176,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSessionId, sessions, handleNewSession, closeSession, setActiveSession, clearTerminal]);
+  }, [activeSessionId, sessions, handleNewSession, closeSession, setActiveSession, clearTerminal, workspaces, activeWorkspaceId, setActiveWorkspace]);
 
   return (
     <div
@@ -220,6 +240,7 @@ export function App() {
         </div>
 
         <div
+          ref={sidebarRef}
           style={{
             width: sidebarWidth,
             flexShrink: 0,
@@ -229,9 +250,8 @@ export function App() {
             overflow: 'hidden',
           }}
         >
-          <TerminalSquareGrid
-            onClose={closeSession}
-          />
+          <WorkspaceDots />
+          <WorkspaceContainer sidebarWidth={sidebarWidth} onClose={closeSession} sidebarRef={sidebarRef} />
           <SessionControls onNewSession={handleNewSession} onAdoptTerminals={handleAdoptTerminals} />
         </div>
       </div>

@@ -291,7 +291,7 @@ export function usePtyBridge() {
     };
   }, []);
 
-  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number }) => {
+  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number; workspaceId?: string }) => {
     const { cols, rows } = mainDimsRef.current;
     // Inherit cwd from the active session when not explicitly provided
     let cwd = options?.cwd;
@@ -325,6 +325,7 @@ export function usePtyBridge() {
       backlog: false,
       cwd: cwd || '',
       planFiles: [],
+      workspaceId: options?.workspaceId || store.activeWorkspaceId,
     });
     return sessionId;
   };
@@ -353,7 +354,7 @@ export function usePtyBridge() {
   const getHookMessage = (sessionId: string) => hookStates.get(sessionId)?.message || '';
 
   const saveAllSessions = () => {
-    const { sessions, activeSessionId } = useTerminalStore.getState();
+    const { sessions, activeSessionId, workspaces, activeWorkspaceId } = useTerminalStore.getState();
     const saved: SavedSession[] = sessions.map((session) => ({
       title: session.title,
       customTitle: session.customTitle,
@@ -361,15 +362,27 @@ export function usePtyBridge() {
       buffer: serializeShadowBuffer(session.id),
       colorIndex: session.colorIndex,
       backlog: session.backlog || undefined,
+      workspaceId: session.workspaceId,
     }));
 
     const activeIndex = sessions.findIndex((s) => s.id === activeSessionId);
-    window.airport.saveState({ sessions: saved, activeIndex: Math.max(activeIndex, 0) });
+    window.airport.saveState({
+      sessions: saved,
+      activeIndex: Math.max(activeIndex, 0),
+      workspaces,
+      activeWorkspaceId,
+    });
   };
 
   const restoreState = async (): Promise<boolean> => {
     const state = await window.airport.loadState();
     if (!state || state.sessions.length === 0) return false;
+
+    // Restore workspaces (migration: if none saved, use default)
+    const defaultWsId = 'default';
+    if (state.workspaces && state.workspaces.length > 0) {
+      useTerminalStore.getState().setWorkspaces(state.workspaces, state.activeWorkspaceId || defaultWsId);
+    }
 
     const newIds: string[] = [];
     for (const saved of state.sessions) {
@@ -379,6 +392,7 @@ export function usePtyBridge() {
         customTitle: saved.customTitle,
         buffer: saved.buffer,
         colorIndex: saved.colorIndex,
+        workspaceId: saved.workspaceId || defaultWsId,
       });
       if (saved.backlog) {
         useTerminalStore.getState().updateSession(id, { backlog: true });
