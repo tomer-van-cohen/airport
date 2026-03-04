@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc-channels';
-import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, SpawnRequestEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
+import type { PtyCreateOptions, PtyDataEvent, PtyExitEvent, HookStatusEvent, HookPlanEvent, SpawnRequestEvent, AirportApi, SessionInfo, SavedState, ExternalTerminal, PlanFile } from '../shared/types';
 
 const api: AirportApi = {
   pty: {
@@ -52,6 +52,11 @@ const api: AirportApi = {
     const handler = (_event: Electron.IpcRendererEvent, data: HookStatusEvent) => callback(data);
     ipcRenderer.on(IPC.HOOK_STATUS, handler);
     return () => ipcRenderer.removeListener(IPC.HOOK_STATUS, handler);
+  },
+  onHookPlan: (callback: (event: HookPlanEvent) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: HookPlanEvent) => callback(data);
+    ipcRenderer.on(IPC.HOOK_PLAN, handler);
+    return () => ipcRenderer.removeListener(IPC.HOOK_PLAN, handler);
   },
   onSpawnRequest: (callback: (event: SpawnRequestEvent) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: SpawnRequestEvent) => callback(data);

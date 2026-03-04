@@ -17,13 +17,6 @@ const lastChunks = new Map<string, string>();
 const bellFlags = new Map<string, boolean>();
 const cachedCwds = new Map<string, string>();
 
-// Plan file tracking: maps session ID → the plan file path claimed by that session.
-// When a new file appears in ~/.claude/plans/ that no session has claimed,
-// it's assigned to the session that's currently busy (running Claude).
-const claimedPlans = new Map<string, string>();
-// All plan file paths we've ever seen, so we can detect new ones.
-let knownPlanPaths = new Set<string>();
-
 // Hook-reported status from Claude Code via file-based IPC.
 // This is the authoritative signal — when present it overrides heuristics.
 interface HookState {
@@ -159,6 +152,12 @@ export function usePtyBridge() {
       }
     });
 
+    // Listen for plan file associations from main process (hook-based IPC)
+    const unsubPlan = window.airport.onHookPlan(({ sessionId, planPath }) => {
+      const name = planPath.split('/').pop() || planPath;
+      setPlanFiles(sessionId, [{ name, path: planPath, modifiedAt: Date.now() }]);
+    });
+
     const unsubExit = window.airport.pty.onExit(({ sessionId }) => {
       disposeShadowTerminal(sessionId);
       removeSession(sessionId);
@@ -167,49 +166,11 @@ export function usePtyBridge() {
       bellFlags.delete(sessionId);
       cachedCwds.delete(sessionId);
       hookStates.delete(sessionId);
-      claimedPlans.delete(sessionId);
     });
 
-    // Polling: standby detection + git title updates + plan detection
+    // Polling: standby detection + git title updates
     pollIntervalRef.current = setInterval(async () => {
       const sessions = useTerminalStore.getState().sessions;
-
-      // --- Plan file detection (global, once per tick) ---
-      // Read all plan files from ~/.claude/plans/, detect new ones,
-      // and assign each new file to whichever session is currently busy.
-      try {
-        const allPlans = await window.airport.getPlanFiles('');
-        const currentPaths = new Set(allPlans.map((f) => f.path));
-
-        // Find newly appeared files (not in our known set)
-        for (const plan of allPlans) {
-          if (!knownPlanPaths.has(plan.path)) {
-            // New file — assign to the first session that's currently busy
-            const busySession = sessions.find((s) => hookStates.get(s.id)?.state === 'busy');
-            if (busySession) {
-              claimedPlans.set(busySession.id, plan.path);
-            }
-          }
-        }
-        knownPlanPaths = currentPaths;
-
-        // Update each session's planFiles based on its claimed plan
-        for (const session of sessions) {
-          const claimedPath = claimedPlans.get(session.id);
-          if (claimedPath) {
-            const match = allPlans.find((f) => f.path === claimedPath);
-            if (match) {
-              setPlanFiles(session.id, [match]);
-            } else {
-              // Plan file was deleted
-              claimedPlans.delete(session.id);
-              setPlanFiles(session.id, []);
-            }
-          } else if (session.planFiles.length > 0) {
-            setPlanFiles(session.id, []);
-          }
-        }
-      } catch { /* ignore */ }
 
       for (const session of sessions) {
         const processName = await window.airport.pty.getProcessName(session.id);
@@ -285,6 +246,7 @@ export function usePtyBridge() {
       unsubData();
       unsubSpawn();
       unsubHook();
+      unsubPlan();
       unsubExit();
       unsubSaveRequest();
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -338,7 +300,6 @@ export function usePtyBridge() {
     bellFlags.delete(sessionId);
     cachedCwds.delete(sessionId);
     hookStates.delete(sessionId);
-    claimedPlans.delete(sessionId);
   };
 
   const setMainDimensions = (cols: number, rows: number) => {

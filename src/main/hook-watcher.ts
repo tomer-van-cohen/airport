@@ -21,6 +21,7 @@ export function startHookWatcher(
   getWindow: () => BrowserWindow | null
 ): () => void {
   const lastContent = new Map<string, string>();
+  const lastPlanContent = new Map<string, string>();
   const STATUS_DIR = path.join(os.tmpdir(), `airport-${process.pid}`);
 
   function processSession(sessionId: string) {
@@ -47,6 +48,27 @@ export function startHookWatcher(
     if (state === 'busy' || state === 'done') {
       win.webContents.send(IPC.HOOK_STATUS, { sessionId, state, message });
     }
+  }
+
+  function processPlanFile(sessionId: string) {
+    const win = getWindow();
+    if (!win || win.isDestroyed()) return;
+
+    const statusFile = ptyManager.getStatusFile(sessionId);
+    if (!statusFile) return;
+
+    const planFile = statusFile.replace(/\.status$/, '.plan');
+    let planPath: string;
+    try {
+      planPath = fs.readFileSync(planFile, 'utf-8').trim();
+    } catch {
+      return;
+    }
+
+    if (!planPath || planPath === lastPlanContent.get(sessionId)) return;
+    lastPlanContent.set(sessionId, planPath);
+
+    win.webContents.send(IPC.HOOK_PLAN, { sessionId, planPath });
   }
 
   // Guard against macOS fs.watch firing duplicate events for the same file
@@ -92,6 +114,9 @@ export function startHookWatcher(
       if (filename && filename.endsWith('.status')) {
         const sessionId = filename.slice(0, -7); // strip '.status'
         processSession(sessionId);
+      } else if (filename && filename.endsWith('.plan')) {
+        const sessionId = filename.slice(0, -5); // strip '.plan'
+        processPlanFile(sessionId);
       } else if (filename && filename.endsWith('.spawn')) {
         processSpawnFile(path.join(STATUS_DIR, filename));
       } else {
@@ -110,6 +135,7 @@ export function startHookWatcher(
   const interval = setInterval(() => {
     for (const sessionId of ptyManager.getAllSessionIds()) {
       processSession(sessionId);
+      processPlanFile(sessionId);
     }
   }, 2000);
 
@@ -117,5 +143,6 @@ export function startHookWatcher(
     clearInterval(interval);
     dirWatcher?.close();
     lastContent.clear();
+    lastPlanContent.clear();
   };
 }

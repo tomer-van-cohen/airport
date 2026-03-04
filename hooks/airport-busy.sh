@@ -55,6 +55,12 @@ case "$tool" in
     fp=$(echo "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     if [ -n "$fp" ]; then
       desc="Writing \`$(basename "$fp")\`"
+      # Capture plan file path for Airport
+      case "$fp" in
+        */.claude/plans/*.md)
+          echo "$fp" > "${AIRPORT_STATUS_FILE%.status}.plan"
+          ;;
+      esac
     else
       desc="Writing file"
     fi
