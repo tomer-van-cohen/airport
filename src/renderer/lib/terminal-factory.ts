@@ -1,6 +1,7 @@
 import { Terminal } from '@xterm/xterm';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { terminalTheme } from './theme';
+import { processBidi } from './bidi-transform';
 
 interface ShadowTerminal {
   terminal: Terminal;
@@ -51,7 +52,7 @@ export function getShadowTerminal(sessionId: string): ShadowTerminal | undefined
 }
 
 export function writeShadowTerminal(sessionId: string, data: string): void {
-  shadowTerminals.get(sessionId)?.terminal.write(data);
+  shadowTerminals.get(sessionId)?.terminal.write(processBidi(data));
 }
 
 export function serializeShadowBuffer(sessionId: string): string {

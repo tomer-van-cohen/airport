@@ -73,6 +73,7 @@
     "@xterm/addon-serialize": "^0.14.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
+    "bidi-js": "^1.0.3",
     "electron": "40.6.1",
     "electron-squirrel-startup": "^1.0.1",
     "node-pty": "^1.1.0",

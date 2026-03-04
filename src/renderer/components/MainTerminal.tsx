@@ -5,6 +5,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { terminalTheme } from '../lib/theme';
 import { serializeShadowBuffer } from '../lib/terminal-factory';
+import { processBidi } from '../lib/bidi-transform';
 import '@xterm/xterm/css/xterm.css';
 
 interface MainTerminalProps {
@@ -80,7 +81,7 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
     // Receive PTY output
     const unsubData = window.airport.pty.onData(({ sessionId: sid, data }) => {
       if (sid === sessionId) {
-        term.write(data);
+        term.write(processBidi(data));
       }
     });
 
