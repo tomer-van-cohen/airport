@@ -55,11 +55,22 @@ export function OnboardingScreen({ onNewSession, onAdoptTerminals }: OnboardingS
             color: '#6c7086',
             fontSize: 14,
             fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-            margin: '0 0 32px 0',
+            margin: '0 0 16px 0',
             lineHeight: 1.5,
           }}
         >
           Where AI agents take off.
+        </p>
+        <p
+          style={{
+            color: '#7f849c',
+            fontSize: 12,
+            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            margin: '0 0 20px 0',
+            lineHeight: 1.5,
+          }}
+        >
+          Got a list of tasks? Ask Claude to spawn an agent for each — each will open in its own tab, build a plan, and wait for your instructions.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

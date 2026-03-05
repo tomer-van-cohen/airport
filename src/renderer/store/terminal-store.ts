@@ -294,7 +294,7 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       }
       return {
         activeWorkspaceId: id,
-        activeSessionId: activeSessionId || state.activeSessionId,
+        activeSessionId,
         workspaceActiveSessionIds,
         planViewSessionId: null,
         planViewPath: null,

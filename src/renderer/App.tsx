@@ -15,6 +15,7 @@ const MAX_SIDEBAR_WIDTH = 600;
 
 export function App() {
   const { sessions, activeSessionId, previousSessionId, setActiveSession, planViewSessionId, planViewPath, workspaces, activeWorkspaceId, setActiveWorkspace } = useTerminalStore();
+  const workspaceEmpty = sessions.length === 0 || !sessions.some((s) => s.workspaceId === activeWorkspaceId && !s.backlog);
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
@@ -197,7 +198,7 @@ export function App() {
         }}
       >
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex' }}>
-          {sessions.length === 0 ? (
+          {workspaceEmpty ? (
             <OnboardingScreen
               onNewSession={handleNewSession}
               onAdoptTerminals={handleAdoptTerminals}
