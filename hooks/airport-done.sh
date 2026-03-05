@@ -17,3 +17,20 @@ if [ -n "$last" ]; then
 else
   echo "done;Finished" > "$AIRPORT_STATUS_FILE"
 fi
+
+# Check for plan files created during this session.
+# Claude Code's plan mode writes to ~/.claude/plans/ internally (not via Write tool),
+# so the busy hook won't catch them. Scan for recently modified plan files.
+plan_file="${AIRPORT_STATUS_FILE%.status}.plan"
+if [ ! -f "$plan_file" ]; then
+  plans_dir="$HOME/.claude/plans"
+  if [ -d "$plans_dir" ]; then
+    # Find the most recently modified .md file (within last 5 minutes)
+    newest=$(find "$plans_dir" -name '*.md' -type f -mmin -5 2>/dev/null | while read f; do
+      echo "$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null) $f"
+    done | sort -rn | head -1 | cut -d' ' -f2-)
+    if [ -n "$newest" ]; then
+      echo "$newest" > "$plan_file"
+    fi
+  fi
+fi

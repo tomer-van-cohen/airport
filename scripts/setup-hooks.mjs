@@ -83,8 +83,36 @@ if (installed > 0) {
   console.log('✓ Airport hooks already up to date');
 }
 
-// --- Global CLAUDE.md: teach Claude about airport-spawn ---
+// --- Global CLAUDE.md: managed blocks ---
 const claudeMdPath = join(claudeDir, 'CLAUDE.md');
+
+// Helper: upsert a marker-delimited block in CLAUDE.md content
+function upsertBlock(content, startMarker, endMarker, block, label) {
+  const startIdx = content.indexOf(startMarker);
+  const endIdx = content.indexOf(endMarker);
+
+  if (startIdx === -1) {
+    const separator = content.length > 0 && !content.endsWith('\n') ? '\n\n' : content.length > 0 ? '\n' : '';
+    console.log(`✓ Airport ${label} instructions added to ${claudeMdPath}`);
+    return content + separator + block + '\n';
+  } else if (endIdx !== -1) {
+    const before = content.slice(0, startIdx);
+    const after = content.slice(endIdx + endMarker.length);
+    const result = before + block + after;
+    if (result !== content) {
+      console.log(`✓ Airport ${label} instructions updated in ${claudeMdPath}`);
+    } else {
+      console.log(`✓ Airport ${label} instructions already up to date`);
+    }
+    return result;
+  } else {
+    // Start marker exists but no end marker (corrupted)
+    const before = content.slice(0, startIdx);
+    console.log(`✓ Airport ${label} instructions repaired in ${claudeMdPath}`);
+    return before + block + '\n';
+  }
+}
+
 const SPAWN_START = '<!-- airport-spawn -->';
 const SPAWN_END = '<!-- /airport-spawn -->';
 const SPAWN_BLOCK = `${SPAWN_START}
@@ -107,34 +135,29 @@ Do not pass --title — the tab will automatically show the git repo and branch 
 Pass the full prompt as an argument to claude (not -p) so it starts an interactive session with the task.
 ${SPAWN_END}`;
 
+const PLAN_START = '<!-- airport-plan -->';
+const PLAN_END = '<!-- /airport-plan -->';
+const PLAN_BLOCK = `${PLAN_START}
+## Airport Plan Review
+
+**IMPORTANT: This section ONLY applies when the \`AIRPORT\` environment variable is set (i.e., you are running inside Airport terminal multiplexer). If \`$AIRPORT\` is not set, ignore this section entirely.**
+
+Airport can display your plan in a visual review panel. After you exit plan mode (or after writing/updating a plan file in \`~/.claude/plans/\`), notify Airport so it can show the "Review Plan" button by running:
+
+\`\`\`bash
+echo "$(ls -t ~/.claude/plans/*.md 2>/dev/null | head -1)" > "\${AIRPORT_STATUS_FILE%.status}.plan"
+\`\`\`
+
+Do this automatically whenever you create or update a plan — no need to ask the user. The command finds the most recently modified plan file and tells Airport where it is.
+${PLAN_END}`;
+
 let claudeMd = '';
 try { claudeMd = readFileSync(claudeMdPath, 'utf-8'); } catch { /* doesn't exist yet */ }
 
-const startIdx = claudeMd.indexOf(SPAWN_START);
-const endIdx = claudeMd.indexOf(SPAWN_END);
+claudeMd = upsertBlock(claudeMd, SPAWN_START, SPAWN_END, SPAWN_BLOCK, 'agent-spawn');
+claudeMd = upsertBlock(claudeMd, PLAN_START, PLAN_END, PLAN_BLOCK, 'plan-review');
 
-if (startIdx === -1) {
-  // Append block (with a leading newline if file has existing content)
-  const separator = claudeMd.length > 0 && !claudeMd.endsWith('\n') ? '\n\n' : claudeMd.length > 0 ? '\n' : '';
-  writeFileSync(claudeMdPath, claudeMd + separator + SPAWN_BLOCK + '\n');
-  console.log(`✓ Airport agent-spawn instructions added to ${claudeMdPath}`);
-} else if (endIdx !== -1) {
-  // Replace between markers
-  const before = claudeMd.slice(0, startIdx);
-  const after = claudeMd.slice(endIdx + SPAWN_END.length);
-  const updated = before + SPAWN_BLOCK + after;
-  if (updated !== claudeMd) {
-    writeFileSync(claudeMdPath, updated);
-    console.log(`✓ Airport agent-spawn instructions updated in ${claudeMdPath}`);
-  } else {
-    console.log('✓ Airport agent-spawn instructions already up to date');
-  }
-} else {
-  // Start marker exists but no end marker (corrupted) — replace from start to EOF
-  const before = claudeMd.slice(0, startIdx);
-  writeFileSync(claudeMdPath, before + SPAWN_BLOCK + '\n');
-  console.log(`✓ Airport agent-spawn instructions repaired in ${claudeMdPath}`);
-}
+writeFileSync(claudeMdPath, claudeMd);
 
 // --- Worktree support: symlink node_modules from main repo ---
 const localNM = join(projectRoot, 'node_modules');
