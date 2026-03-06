@@ -6,6 +6,7 @@ import { OnboardingScreen } from './components/OnboardingScreen';
 import { PlanReviewPanel } from './components/PlanReviewPanel';
 import { WorkspaceDots } from './components/WorkspaceDots';
 import { WorkspaceContainer } from './components/WorkspaceContainer';
+import { QuickSwitcher } from './components/QuickSwitcher';
 import { useTerminalStore } from './store/terminal-store';
 import { usePtyBridge } from './hooks/usePtyBridge';
 
@@ -18,6 +19,7 @@ export function App() {
   const workspaceEmpty = sessions.length === 0 || !sessions.some((s) => s.workspaceId === activeWorkspaceId && !s.backlog);
   const { createSession, closeSession, setMainDimensions, restoreState, clearTerminal } = usePtyBridge();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
   const dragging = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +84,12 @@ export function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey && e.key === 'p') {
+        e.preventDefault();
+        setQuickSwitcherOpen((prev) => !prev);
+        return;
+      }
+
       if (e.metaKey && e.key === 't') {
         e.preventDefault();
         handleNewSession();
@@ -256,6 +264,8 @@ export function App() {
           <SessionControls onNewSession={handleNewSession} onAdoptTerminals={handleAdoptTerminals} />
         </div>
       </div>
+
+      {quickSwitcherOpen && <QuickSwitcher onClose={() => setQuickSwitcherOpen(false)} />}
     </div>
   );
 }
