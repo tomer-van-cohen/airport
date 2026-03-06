@@ -27,6 +27,7 @@ export interface TerminalSession {
   cwd: string;
   planFiles: PlanFile[];
   workspaceId: string;
+  parentSessionId?: string;
 }
 
 export type SessionStatus =
@@ -70,6 +71,7 @@ export interface SavedSession {
   colorIndex: number;
   backlog?: boolean;
   workspaceId?: string;
+  parentIndex?: number;
 }
 
 export interface SavedState {

@@ -114,10 +114,12 @@ export function usePtyBridge() {
 
     // Listen for spawn requests from main process (file-based spawn protocol)
     const unsubSpawn = window.airport.onSpawnRequest(async ({ title, cwd, command }) => {
+      const parentId = useTerminalStore.getState().activeSessionId;
       const sessionId = await createSession({
         cwd,
         title: title || undefined,
         customTitle: !!title,
+        parentSessionId: parentId || undefined,
       });
       useTerminalStore.getState().setActiveSession(sessionId);
 
@@ -253,7 +255,7 @@ export function usePtyBridge() {
     };
   }, []);
 
-  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number; workspaceId?: string }) => {
+  const createSession = async (options?: { cwd?: string; title?: string; customTitle?: boolean; buffer?: string; colorIndex?: number; workspaceId?: string; parentSessionId?: string }) => {
     const { cols, rows } = mainDimsRef.current;
     // Inherit cwd from the active session when not explicitly provided
     let cwd = options?.cwd;
@@ -288,6 +290,7 @@ export function usePtyBridge() {
       cwd: cwd || '',
       planFiles: [],
       workspaceId: options?.workspaceId || store.activeWorkspaceId,
+      parentSessionId: options?.parentSessionId,
     });
     return sessionId;
   };
@@ -316,15 +319,23 @@ export function usePtyBridge() {
 
   const saveAllSessions = () => {
     const { sessions, activeSessionId, workspaces, activeWorkspaceId } = useTerminalStore.getState();
-    const saved: SavedSession[] = sessions.map((session) => ({
-      title: session.title,
-      customTitle: session.customTitle,
-      cwd: cachedCwds.get(session.id) || '',
-      buffer: serializeShadowBuffer(session.id),
-      colorIndex: session.colorIndex,
-      backlog: session.backlog || undefined,
-      workspaceId: session.workspaceId,
-    }));
+    const saved: SavedSession[] = sessions.map((session) => {
+      let parentIndex: number | undefined;
+      if (session.parentSessionId) {
+        const idx = sessions.findIndex((s) => s.id === session.parentSessionId);
+        if (idx >= 0) parentIndex = idx;
+      }
+      return {
+        title: session.title,
+        customTitle: session.customTitle,
+        cwd: cachedCwds.get(session.id) || '',
+        buffer: serializeShadowBuffer(session.id),
+        colorIndex: session.colorIndex,
+        backlog: session.backlog || undefined,
+        workspaceId: session.workspaceId,
+        parentIndex,
+      };
+    });
 
     const activeIndex = sessions.findIndex((s) => s.id === activeSessionId);
     window.airport.saveState({
@@ -359,6 +370,14 @@ export function usePtyBridge() {
         useTerminalStore.getState().updateSession(id, { backlog: true });
       }
       newIds.push(id);
+    }
+
+    // Rebuild parent-child relationships from saved indices
+    for (let i = 0; i < state.sessions.length; i++) {
+      const saved = state.sessions[i];
+      if (saved.parentIndex !== undefined && saved.parentIndex >= 0 && saved.parentIndex < newIds.length) {
+        useTerminalStore.getState().updateSession(newIds[i], { parentSessionId: newIds[saved.parentIndex] });
+      }
     }
 
     // Set the previously active session
