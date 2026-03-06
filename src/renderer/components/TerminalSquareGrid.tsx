@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { TerminalSquare } from './TerminalSquare';
 import { getTabColor } from './RedDotIndicator';
 import { useTerminalStore } from '../store/terminal-store';
@@ -15,6 +15,34 @@ export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridP
 
   const normalSessions = sessions.filter((s) => !s.backlog && s.workspaceId === workspaceId);
   const backlogSessions = sessions.filter((s) => s.backlog && s.workspaceId === workspaceId);
+
+  // Group children under their parents for display
+  const orderedNormal = useMemo(() => {
+    const childCountMap = new Map<string, number>();
+    const childrenOf = new Map<string, typeof normalSessions>();
+    const roots: typeof normalSessions = [];
+
+    for (const s of normalSessions) {
+      if (s.parentSessionId && normalSessions.some((p) => p.id === s.parentSessionId)) {
+        const existing = childrenOf.get(s.parentSessionId) || [];
+        existing.push(s);
+        childrenOf.set(s.parentSessionId, existing);
+        childCountMap.set(s.parentSessionId, (childCountMap.get(s.parentSessionId) || 0) + 1);
+      } else {
+        roots.push(s);
+      }
+    }
+
+    const result: { session: typeof normalSessions[0]; isChild: boolean; childCount: number }[] = [];
+    for (const root of roots) {
+      result.push({ session: root, isChild: false, childCount: childCountMap.get(root.id) || 0 });
+      const children = childrenOf.get(root.id) || [];
+      for (const child of children) {
+        result.push({ session: child, isChild: true, childCount: 0 });
+      }
+    }
+    return result;
+  }, [normalSessions]);
 
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
   const [dropTarget, setDropTarget] = useState<{ zone: 'normal' | 'backlog' | 'backlog-header'; index: number } | null>(null);
@@ -91,6 +119,7 @@ export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridP
     list: typeof sessions,
     session: typeof sessions[0],
     localIndex: number,
+    options?: { isChild?: boolean; childCount?: number },
   ) => {
     const dragLocalIndex = dragSource?.zone === zone
       ? list.findIndex((s) => s.id === dragSource.sessionId)
@@ -102,7 +131,7 @@ export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridP
     const showCrossZone = isDropTarget && dragSource?.zone !== zone;
 
     return (
-      <div key={session.id} style={{ position: 'relative' }}>
+      <div key={session.id} style={{ position: 'relative', marginLeft: options?.isChild ? 16 : 0 }}>
         {(showAbove || showCrossZone) && (
           <div style={{ position: 'absolute', top: -5, left: 4, right: 4, height: 2, background: '#89b4fa', borderRadius: 1, zIndex: 10 }} />
         )}
@@ -112,6 +141,7 @@ export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridP
           tabColor={getTabColor(session.colorIndex)}
           onClick={() => setActiveSession(session.id)}
           onClose={() => onClose(session.id)}
+          childCount={options?.childCount}
           draggable
           onDragStart={handleDragStart(zone, localIndex, session.id)}
           onDragEnd={clearDrag}
@@ -138,9 +168,9 @@ export function TerminalSquareGrid({ onClose, workspaceId }: TerminalSquareGridP
       onDragOver={handleContainerDragOver}
       onDrop={handleDrop}
     >
-      {/* Normal sessions */}
-      {normalSessions.map((session, index) =>
-        renderSessionItem('normal', normalSessions, session, index)
+      {/* Normal sessions (grouped: children indented under parents) */}
+      {orderedNormal.map(({ session, isChild, childCount }, index) =>
+        renderSessionItem('normal', normalSessions, session, index, { isChild, childCount })
       )}
 
       {/* Empty-state drop zone for restoring from backlog when main list is empty */}
