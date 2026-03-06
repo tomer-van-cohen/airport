@@ -6,6 +6,7 @@ import { registerIpcHandlers } from './ipc-handlers';
 import { setupMenu } from './menu';
 import { IPC } from '../shared/ipc-channels';
 import { startHookWatcher } from './hook-watcher';
+import { initNotifier } from './notifier';
 
 if (started) {
   app.quit();
@@ -73,6 +74,7 @@ if (!gotLock) {
   };
 
   registerIpcHandlers(ptyManager, () => mainWindow);
+  initNotifier(() => mainWindow);
   const stopHookWatcher = startHookWatcher(ptyManager, () => mainWindow);
 
   app.on('second-instance', () => {

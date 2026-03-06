@@ -242,6 +242,22 @@ export function usePtyBridge() {
       saveAllSessions();
     });
 
+    // Sync active session to main process for notification suppression
+    let lastSyncedActiveId = useTerminalStore.getState().activeSessionId;
+    if (lastSyncedActiveId) window.airport.setActiveSession(lastSyncedActiveId);
+    const unsubActiveSync = useTerminalStore.subscribe((state) => {
+      const activeId = state.activeSessionId;
+      if (activeId && activeId !== lastSyncedActiveId) {
+        lastSyncedActiveId = activeId;
+        window.airport.setActiveSession(activeId);
+      }
+    });
+
+    // Listen for notification clicks - switch to the clicked session
+    const unsubNotifClick = window.airport.onNotificationClick((sessionId) => {
+      useTerminalStore.getState().setActiveSession(sessionId);
+    });
+
     return () => {
       unsubData();
       unsubSpawn();
@@ -249,6 +265,8 @@ export function usePtyBridge() {
       unsubPlan();
       unsubExit();
       unsubSaveRequest();
+      unsubActiveSync();
+      unsubNotifClick();
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);

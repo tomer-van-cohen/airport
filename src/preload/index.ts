@@ -63,6 +63,13 @@ const api: AirportApi = {
     ipcRenderer.on(IPC.SPAWN_REQUEST, handler);
     return () => ipcRenderer.removeListener(IPC.SPAWN_REQUEST, handler);
   },
+  setActiveSession: (sessionId: string) =>
+    ipcRenderer.send(IPC.ACTIVE_SESSION_CHANGED, sessionId),
+  onNotificationClick: (callback: (sessionId: string) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, sessionId: string) => callback(sessionId);
+    ipcRenderer.on(IPC.NOTIFICATION_CLICK, handler);
+    return () => ipcRenderer.removeListener(IPC.NOTIFICATION_CLICK, handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('airport', api);

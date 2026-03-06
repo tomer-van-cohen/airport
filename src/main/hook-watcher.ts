@@ -4,6 +4,7 @@ import os from 'node:os';
 import { BrowserWindow } from 'electron';
 import { PtyManager } from './pty-manager';
 import { IPC } from '../shared/ipc-channels';
+import { handleHookStatus } from './notifier';
 
 /**
  * Watches status files written by Claude Code hooks.
@@ -52,6 +53,7 @@ export function startHookWatcher(
 
     if (state === 'busy' || state === 'done') {
       win.webContents.send(IPC.HOOK_STATUS, { sessionId, state, message });
+      handleHookStatus(sessionId, state, message, getWindow);
     }
   }
 
