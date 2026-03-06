@@ -123,6 +123,8 @@ export interface AirportApi {
   discoverTerminals: () => Promise<ExternalTerminal[]>;
   getPlanFiles: (cwd: string) => Promise<PlanFile[]>;
   readPlanFile: (path: string) => Promise<string>;
+  setActiveSession: (sessionId: string) => void;
+  onNotificationClick: (callback: (sessionId: string) => void) => () => void;
 }
 
 declare global {
