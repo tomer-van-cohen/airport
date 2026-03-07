@@ -7,6 +7,10 @@ if [ "$(uname)" != "Darwin" ]; then
 fi
 
 ARCH=$(uname -m)
+if [ "$ARCH" != "arm64" ]; then
+  echo "Error: Airport currently requires Apple Silicon (arm64). Intel Mac support coming soon." >&2
+  exit 1
+fi
 REPO="tomer-van-cohen/airport"
 
 echo "Fetching latest release..."

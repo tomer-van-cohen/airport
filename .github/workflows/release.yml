@@ -10,14 +10,7 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-14
-          - arch: x86_64
-            runner: macos-13
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -28,16 +21,16 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build native app
-        run: ./scripts/build-native.sh ${{ matrix.arch }}
+      - name: Build native app (arm64)
+        run: ./scripts/build-native.sh arm64
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Airport-${{ matrix.arch }}
+          name: Airport-arm64
           path: |
-            dist/Airport-${{ matrix.arch }}.tar.gz
-            dist/Airport-${{ matrix.arch }}.dmg
+            dist/Airport-arm64.tar.gz
+            dist/Airport-arm64.dmg
 
   release:
     needs: build
