@@ -27,6 +27,7 @@ if [ ! -f "$NODE_BIN" ]; then
     mkdir -p "$NODE_DIR"
     NODE_ARCH="$ARCH"
     if [ "$ARCH" = "aarch64" ]; then NODE_ARCH="arm64"; fi
+    if [ "$ARCH" = "x86_64" ]; then NODE_ARCH="x64"; fi
     curl -sL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-${NODE_ARCH}.tar.gz" | \
         tar xz -C "$NODE_DIR" --strip-components=1
 fi
