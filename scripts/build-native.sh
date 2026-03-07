@@ -89,11 +89,19 @@ fi
 echo "==> Codesigning..."
 codesign --force --deep --sign - "$APP_DIR"
 
-# 8. Create DMG
+# 8. Create tar.gz
+echo "==> Creating tar.gz..."
+TAR_PATH="$PROJECT_DIR/dist/Airport-${ARCH}.tar.gz"
+rm -f "$TAR_PATH"
+tar -czf "$TAR_PATH" -C "$PROJECT_DIR/dist" Airport.app
+
+# 9. Create DMG
 echo "==> Creating DMG..."
 DMG_PATH="$PROJECT_DIR/dist/Airport-${ARCH}.dmg"
 rm -f "$DMG_PATH"
 hdiutil create -volname "Airport" -srcfolder "$APP_DIR" -ov -format UDZO "$DMG_PATH"
 
-echo "==> Done! Output: $DMG_PATH"
+echo "==> Done!"
 echo "    App bundle: $APP_DIR"
+echo "    tar.gz:     $TAR_PATH"
+echo "    DMG:        $DMG_PATH"
