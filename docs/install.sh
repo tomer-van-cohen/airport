@@ -34,14 +34,6 @@ if [ -d /Applications/Airport.app ]; then
 fi
 mv "$TMP_DIR/Airport.app" /Applications/Airport.app
 
-if ln -sf /Applications/Airport.app/Contents/Resources/bin/airport /usr/local/bin/airport 2>/dev/null; then
-  :
-else
-  echo "Creating symlink in /usr/local/bin requires admin privileges..."
-  sudo mkdir -p /usr/local/bin
-  sudo ln -sf /Applications/Airport.app/Contents/Resources/bin/airport /usr/local/bin/airport
-fi
-
 echo ""
 echo "Airport ${LATEST} installed to /Applications/Airport.app"
 echo "Run:  open /Applications/Airport.app"
