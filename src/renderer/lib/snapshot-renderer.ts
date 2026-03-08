@@ -1,5 +1,6 @@
 import { getShadowTerminal } from './terminal-factory';
 import { terminalTheme } from './theme';
+import { reorderString } from './bidi-renderer';
 
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 14;
@@ -54,7 +55,7 @@ export function renderSnapshot(
     }
 
     ctx.fillStyle = terminalTheme.foreground as string;
-    ctx.fillText(text.trimEnd(), 2, row * CHAR_HEIGHT + 1);
+    ctx.fillText(reorderString(text.trimEnd()), 2, row * CHAR_HEIGHT + 1);
   }
 
   ctx.restore();

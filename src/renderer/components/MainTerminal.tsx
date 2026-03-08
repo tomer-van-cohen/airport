@@ -5,6 +5,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { terminalTheme } from '../lib/theme';
 import { serializeShadowBuffer } from '../lib/terminal-factory';
+import { BidiOverlay } from '../lib/bidi-overlay';
 import '@xterm/xterm/css/xterm.css';
 
 interface MainTerminalProps {
@@ -69,6 +70,9 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
       term.write(savedBuffer);
     }
 
+    // BiDi overlay for RTL (Hebrew/Arabic) rendering
+    const bidiOverlay = new BidiOverlay(term, containerRef.current);
+
     onDimensions(term.cols, term.rows);
     term.focus();
 
@@ -91,6 +95,7 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      bidiOverlay.dispose();
       dataDisposable.dispose();
       unsubData();
       resizeObserver.disconnect();
