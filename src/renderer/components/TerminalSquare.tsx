@@ -9,13 +9,14 @@ interface TerminalSquareProps {
   tabColor: string;
   onClick: () => void;
   onClose: () => void;
+  childCount?: number;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, draggable, onDragStart, onDragEnd, onDragOver }: TerminalSquareProps) {
+export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, childCount, draggable, onDragStart, onDragEnd, onDragOver }: TerminalSquareProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(session.title);
   const [titleHovered, setTitleHovered] = useState(false);
@@ -283,6 +284,26 @@ export function TerminalSquare({ session, isActive, tabColor, onClick, onClose, 
           </svg>
           Review plan
         </button>
+      )}
+
+      {/* Spawn badge */}
+      {childCount != null && childCount > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          background: 'rgba(137, 180, 250, 0.1)',
+          border: '1px solid rgba(137, 180, 250, 0.3)',
+          borderRadius: 4,
+          padding: '2px 6px',
+          color: '#89b4fa',
+          fontSize: 10,
+          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          fontWeight: 600,
+          alignSelf: 'flex-start',
+        }}>
+          {childCount} spawned
+        </div>
       )}
 
       {/* Status bar */}
