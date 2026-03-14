@@ -15,7 +15,7 @@ let shadowContainer: HTMLDivElement | null = null;
 function getShadowContainer(): HTMLDivElement {
   if (!shadowContainer) {
     shadowContainer = document.createElement('div');
-    shadowContainer.style.cssText = 'position:fixed;left:-9999px;top:-9999px;visibility:hidden;';
+    shadowContainer.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;';
     document.body.appendChild(shadowContainer);
   }
   return shadowContainer;
