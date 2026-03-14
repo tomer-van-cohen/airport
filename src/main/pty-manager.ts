@@ -46,6 +46,7 @@ export class PtyManager {
         AIRPORT_PID: String(process.pid),
         AIRPORT_SPAWN_DIR: STATUS_DIR,
         AIRPORT_STATUS_FILE: statusFile,
+        SHELL_SESSIONS_DISABLE: '1',
         PATH: `${BIN_DIR}:${existingPath}`,
       } as Record<string, string>,
     });
