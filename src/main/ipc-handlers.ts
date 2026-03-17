@@ -99,12 +99,15 @@ export function registerIpcHandlers(ptyManager: PtyManager, server: WsServer): v
 
     let gitRepo = '';
     let gitBranch = '';
+    // Use git -C instead of { cwd } to avoid spawning a child process
+    // whose CWD is inside a macOS TCC-protected directory (~/Downloads,
+    // ~/Documents, ~/Desktop), which triggers endless permission prompts.
     try {
       // --git-common-dir returns the main repo's .git dir even inside a worktree
       // (relative ".git" in a normal repo, absolute path in a worktree)
-      const { stdout: commonDir } = await execFileAsync('git', ['rev-parse', '--git-common-dir'], { cwd });
+      const { stdout: commonDir } = await execFileAsync('git', ['-C', cwd, 'rev-parse', '--git-common-dir']);
       gitRepo = path.basename(path.dirname(path.resolve(cwd, commonDir.trim())));
-      const { stdout: branch } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd });
+      const { stdout: branch } = await execFileAsync('git', ['-C', cwd, 'rev-parse', '--abbrev-ref', 'HEAD']);
       gitBranch = branch.trim();
     } catch { /* not a git repo */ }
 

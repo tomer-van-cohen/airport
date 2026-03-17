@@ -52,6 +52,17 @@ class NodeProcess {
         }
         proc.environment = env
 
+        // Ensure the data directory exists so currentDirectoryURL works.
+        // Without this, the process inherits the parent's CWD (often ~),
+        // and child process spawns in TCC-protected subdirs like ~/Downloads
+        // trigger endless macOS permission prompts.
+        try? FileManager.default.createDirectory(
+            atPath: dataDir,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        proc.currentDirectoryURL = URL(fileURLWithPath: dataDir)
+
         let pipe = Pipe()
         proc.standardOutput = pipe
 

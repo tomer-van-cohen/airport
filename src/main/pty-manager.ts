@@ -43,11 +43,22 @@ export class PtyManager {
     const shell = getDefaultShell();
 
     const existingPath = process.env.PATH || '';
+    const home = process.env.HOME || process.env.USERPROFILE || (process.platform === 'win32' ? 'C:\\' : '/');
+    let cwd = options.cwd || home;
+    // On macOS, spawning a process whose CWD is inside a TCC-protected
+    // directory (~/Downloads, ~/Documents, ~/Desktop) triggers endless
+    // permission popups for ad-hoc signed apps.  Fall back to $HOME.
+    if (process.platform === 'darwin') {
+      const tccDirs = ['Downloads', 'Documents', 'Desktop'].map(d => path.join(home, d));
+      if (tccDirs.some(d => cwd === d || cwd.startsWith(d + '/'))) {
+        cwd = home;
+      }
+    }
     const proc = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: options.cols,
       rows: options.rows,
-      cwd: options.cwd || process.env.HOME || process.env.USERPROFILE || (process.platform === 'win32' ? 'C:\\' : '/'),
+      cwd,
       env: {
         ...Object.fromEntries(
           Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE')
