@@ -25,6 +25,7 @@ if (Test-Path $installDir) {
 
 # Extract
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+Unblock-File -Path $zipPath
 Expand-Archive -Path $zipPath -DestinationPath $installDir -Force
 Remove-Item -Force $zipPath
 
@@ -60,4 +61,4 @@ if (-not (Test-Path $webview2Key)) {
 Write-Host ""
 Write-Host "Airport $tag installed to $installDir"
 Write-Host "Launching Airport..."
-Start-Process (Join-Path $installDir "Airport.exe")
+Start-Process -FilePath (Join-Path $installDir "Airport.exe")
