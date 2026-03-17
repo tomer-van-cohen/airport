@@ -17,14 +17,29 @@ const execFileAsync = promisify(execFile);
  * (e.g. a git worktree), not the shell's original cwd.
  */
 async function getDeepestDescendant(pid: number): Promise<number> {
+  if (process.platform === 'win32') return getDeepestDescendantWindows(pid);
   try {
     const { stdout } = await execFileAsync('pgrep', ['-P', String(pid)]);
     const children = stdout.trim().split('\n').filter(Boolean).map(Number);
     if (children.length === 0) return pid;
     return getDeepestDescendant(children[0]);
   } catch {
-    return pid; // no children — this is the leaf
+    return pid;
   }
+}
+
+async function getDeepestDescendantWindows(pid: number): Promise<number> {
+  try {
+    const { stdout } = await execFileAsync('powershell', [
+      '-NoProfile', '-Command',
+      `(Get-CimInstance Win32_Process -Filter "ParentProcessId=${pid}").ProcessId`
+    ]);
+    const children = stdout.trim().split('\n')
+      .map(l => parseInt(l.trim(), 10))
+      .filter(n => !isNaN(n));
+    if (children.length === 0) return pid;
+    return getDeepestDescendantWindows(children[0]);
+  } catch { return pid; }
 }
 
 export function registerIpcHandlers(ptyManager: PtyManager, server: WsServer): void {
@@ -66,11 +81,19 @@ export function registerIpcHandlers(ptyManager: PtyManager, server: WsServer): v
     const fgPid = await getDeepestDescendant(pid);
 
     let cwd = '';
-    try {
-      const { stdout } = await execFileAsync('lsof', ['-a', '-p', String(fgPid), '-d', 'cwd', '-Fn']);
-      const match = stdout.match(/\nn(.*)/);
-      if (match) cwd = match[1];
-    } catch { /* ignore */ }
+    if (process.platform === 'win32') {
+      const statusFile = ptyManager.getStatusFile(sessionId);
+      if (statusFile) {
+        const cwdFile = path.join(path.dirname(statusFile), `${sessionId}.cwd`);
+        try { cwd = fs.readFileSync(cwdFile, 'utf-8').trim(); } catch {}
+      }
+    } else {
+      try {
+        const { stdout } = await execFileAsync('lsof', ['-a', '-p', String(fgPid), '-d', 'cwd', '-Fn']);
+        const match = stdout.match(/\nn(.*)/);
+        if (match) cwd = match[1];
+      } catch { /* ignore */ }
+    }
 
     if (!cwd) return { cwd: '', gitRepo: '', gitBranch: '' };
 
@@ -89,6 +112,7 @@ export function registerIpcHandlers(ptyManager: PtyManager, server: WsServer): v
   });
 
   server.handle(IPC.DISCOVER_TERMINALS, async (): Promise<ExternalTerminal[]> => {
+    if (process.platform === 'win32') return [];
     const ownPids = new Set(ptyManager.getOwnPids());
     const shellNames = new Set(['zsh', 'bash', 'fish', 'sh', 'tcsh', 'ksh']);
 

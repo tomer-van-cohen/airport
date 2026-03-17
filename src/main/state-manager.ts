@@ -3,7 +3,13 @@ import path from 'node:path';
 import os from 'node:os';
 import type { SavedState } from '../shared/types';
 
-const DATA_DIR = process.env.AIRPORT_DATA_DIR || path.join(os.homedir(), 'Library', 'Application Support', 'Airport');
+function getDefaultDataDir(): string {
+  if (process.platform === 'win32') {
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'Airport');
+  }
+  return path.join(os.homedir(), 'Library', 'Application Support', 'Airport');
+}
+const DATA_DIR = process.env.AIRPORT_DATA_DIR || getDefaultDataDir();
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const STATE_FILE = path.join(DATA_DIR, 'session-state.json');
 

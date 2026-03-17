@@ -29,7 +29,7 @@ export function SessionControls({ onNewSession, onAdoptTerminals }: SessionContr
     border: '1px solid #45475a',
     cursor: 'pointer',
     fontSize: 13,
-    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     transition: 'background 0.15s',
   };
 
@@ -104,7 +104,7 @@ export function SessionControls({ onNewSession, onAdoptTerminals }: SessionContr
               border: 'none',
               cursor: 'pointer',
               fontSize: 13,
-              fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
               textAlign: 'left',
               transition: 'background 0.15s',
             }}
@@ -131,7 +131,7 @@ export function SessionControls({ onNewSession, onAdoptTerminals }: SessionContr
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 13,
-                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 textAlign: 'left',
                 transition: 'background 0.15s',
               }}
@@ -159,7 +159,7 @@ export function SessionControls({ onNewSession, onAdoptTerminals }: SessionContr
               border: 'none',
               cursor: 'pointer',
               fontSize: 13,
-              fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
               textAlign: 'left',
               transition: 'background 0.15s',
             }}

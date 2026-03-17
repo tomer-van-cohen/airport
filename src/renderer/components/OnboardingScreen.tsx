@@ -12,7 +12,7 @@ export function OnboardingScreen({ onNewSession, onAdoptTerminals }: OnboardingS
     borderRadius: 8,
     cursor: 'pointer',
     fontSize: 14,
-    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     transition: 'background 0.15s, border-color 0.15s',
     width: '100%',
     textAlign: 'left' as const,
@@ -43,7 +43,7 @@ export function OnboardingScreen({ onNewSession, onAdoptTerminals }: OnboardingS
             color: '#cdd6f4',
             fontSize: 28,
             fontWeight: 600,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             margin: '0 0 8px 0',
           }}
         >
@@ -54,7 +54,7 @@ export function OnboardingScreen({ onNewSession, onAdoptTerminals }: OnboardingS
           style={{
             color: '#6c7086',
             fontSize: 14,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             margin: '0 0 16px 0',
             lineHeight: 1.5,
           }}
@@ -65,7 +65,7 @@ export function OnboardingScreen({ onNewSession, onAdoptTerminals }: OnboardingS
           style={{
             color: '#7f849c',
             fontSize: 12,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             margin: '0 0 20px 0',
             lineHeight: 1.5,
           }}

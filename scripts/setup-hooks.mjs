@@ -13,8 +13,9 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const busyScript = join(projectRoot, 'hooks', 'airport-busy.sh');
-const doneScript = join(projectRoot, 'hooks', 'airport-done.sh');
+const hookExt = process.platform === 'win32' ? '.js' : '.sh';
+const busyScript = join(projectRoot, 'hooks', `airport-busy${hookExt}`);
+const doneScript = join(projectRoot, 'hooks', `airport-done${hookExt}`);
 
 const DESIRED_HOOKS = {
   UserPromptSubmit: busyScript,
@@ -24,8 +25,11 @@ const DESIRED_HOOKS = {
   Notification:     doneScript,
 };
 
-const isAirportHook = (cmd) =>
-  cmd.endsWith('/hooks/airport-busy.sh') || cmd.endsWith('/hooks/airport-done.sh');
+const isAirportHook = (cmd) => {
+  const normalized = cmd.replace(/\\/g, '/');
+  return normalized.endsWith('/hooks/airport-busy.sh') || normalized.endsWith('/hooks/airport-done.sh') ||
+         normalized.endsWith('/hooks/airport-busy.js') || normalized.endsWith('/hooks/airport-done.js');
+};
 
 const claudeDir = join(homedir(), '.claude');
 const settingsPath = join(claudeDir, 'settings.json');

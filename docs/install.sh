@@ -2,7 +2,10 @@
 set -euo pipefail
 
 if [ "$(uname)" != "Darwin" ]; then
-  echo "Error: Airport is macOS-only." >&2
+  echo "This script is for macOS. For Windows, run in PowerShell:"
+  echo ""
+  echo "  irm https://airport.tomervancohen.com/install.ps1 | iex"
+  echo ""
   exit 1
 fi
 

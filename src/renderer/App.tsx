@@ -82,13 +82,15 @@ export function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key === 't') {
+      const isMod = navigator.userAgent.includes('Windows') ? e.ctrlKey : e.metaKey;
+
+      if (isMod && e.key === 't') {
         e.preventDefault();
         handleNewSession();
         return;
       }
 
-      if (e.metaKey && e.key === 'w') {
+      if (isMod && e.key === 'w') {
         e.preventDefault();
         if (activeSessionId) {
           closeSession(activeSessionId);
@@ -105,7 +107,7 @@ export function App() {
       }
 
       // Workspace switching: Ctrl+Cmd+] / Ctrl+Cmd+[
-      if (e.ctrlKey && e.metaKey && e.key === ']') {
+      if (e.ctrlKey && (navigator.userAgent.includes('Windows') ? e.altKey : e.metaKey) && e.key === ']') {
         e.preventDefault();
         const idx = workspaces.findIndex((w) => w.id === activeWorkspaceId);
         if (workspaces.length > 1) {
@@ -114,7 +116,7 @@ export function App() {
         return;
       }
 
-      if (e.ctrlKey && e.metaKey && e.key === '[') {
+      if (e.ctrlKey && (navigator.userAgent.includes('Windows') ? e.altKey : e.metaKey) && e.key === '[') {
         e.preventDefault();
         const idx = workspaces.findIndex((w) => w.id === activeWorkspaceId);
         if (workspaces.length > 1) {
@@ -126,7 +128,7 @@ export function App() {
       // Session shortcuts scoped to active workspace
       const visible = sessions.filter((s) => !s.backlog && s.workspaceId === activeWorkspaceId);
 
-      if (e.metaKey && e.key >= '1' && e.key <= '9') {
+      if (isMod && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
         if (idx < visible.length) {
@@ -135,7 +137,7 @@ export function App() {
         return;
       }
 
-      if (e.metaKey && e.key === ']') {
+      if (isMod && e.key === ']') {
         e.preventDefault();
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         if (visible.length > 0) {
@@ -144,7 +146,7 @@ export function App() {
         return;
       }
 
-      if (e.metaKey && e.key === '[') {
+      if (isMod && e.key === '[') {
         e.preventDefault();
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         if (visible.length > 0) {
@@ -153,7 +155,7 @@ export function App() {
         return;
       }
 
-      if (e.metaKey && e.key === 'j') {
+      if (isMod && e.key === 'j') {
         e.preventDefault();
         const idx = visible.findIndex((s) => s.id === activeSessionId);
         for (let i = 1; i <= visible.length; i++) {
@@ -166,7 +168,7 @@ export function App() {
         return;
       }
 
-      if (e.metaKey && e.key === 'k') {
+      if (isMod && e.key === 'k') {
         e.preventDefault();
         if (activeSessionId) {
           clearTerminal(activeSessionId);

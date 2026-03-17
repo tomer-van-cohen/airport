@@ -78,7 +78,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
             cursor: 'pointer',
             color: '#cdd6f4',
             fontSize: 12,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             transition: 'background 0.15s, border-color 0.15s',
           }}
           onMouseEnter={(e) => {
@@ -102,7 +102,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
           gap: 6,
           color: '#cba6f7',
           fontSize: 12,
-          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           fontWeight: 600,
         }}>
           <svg width={12} height={12} viewBox="0 0 16 16" fill="#cba6f7">
@@ -156,7 +156,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
             height: '100%',
             color: '#6c7086',
             fontSize: 13,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           }}>
             Loading plan...
           </div>
@@ -168,7 +168,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
             height: '100%',
             color: '#f38ba8',
             fontSize: 13,
-            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           }}>
             Plan file not found or could not be read.
           </div>
@@ -182,7 +182,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 24,
                     fontWeight: 700,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     borderBottom: '1px solid #313244',
                     paddingBottom: 8,
                     marginBottom: 16,
@@ -194,7 +194,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 20,
                     fontWeight: 600,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     borderBottom: '1px solid #313244',
                     paddingBottom: 6,
                     marginBottom: 12,
@@ -206,7 +206,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 16,
                     fontWeight: 600,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     marginBottom: 8,
                     marginTop: 20,
                   }}>{children}</h3>
@@ -216,7 +216,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#bac2de',
                     fontSize: 14,
                     fontWeight: 600,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     marginBottom: 6,
                     marginTop: 16,
                   }}>{children}</h4>
@@ -226,7 +226,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 14,
                     lineHeight: 1.7,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     marginBottom: 12,
                     marginTop: 0,
                   }}>{children}</p>
@@ -290,7 +290,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 14,
                     lineHeight: 1.7,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     paddingLeft: 24,
                     marginBottom: 12,
                     marginTop: 4,
@@ -301,7 +301,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                     color: '#cdd6f4',
                     fontSize: 14,
                     lineHeight: 1.7,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     paddingLeft: 24,
                     marginBottom: 12,
                     marginTop: 4,
@@ -316,7 +316,7 @@ export function PlanReviewPanel({ sessionId, planPath }: PlanReviewPanelProps) {
                       borderCollapse: 'collapse',
                       width: '100%',
                       fontSize: 13,
-                      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     }}>{children}</table>
                   </div>
                 ),

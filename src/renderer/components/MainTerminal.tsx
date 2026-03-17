@@ -33,7 +33,7 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
       scrollback: 5000,
       cursorBlink: true,
       fontSize: 14,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace',
     });
 
     const fitAddon = new FitAddon();
@@ -56,6 +56,12 @@ export function MainTerminal({ sessionId, onDimensions }: MainTerminalProps) {
     // Let Ctrl+Tab bubble to the window handler
     term.attachCustomKeyEventHandler((e) => {
       if (e.ctrlKey && e.key === 'Tab') return false;
+      // On Windows, let Ctrl+<key> shortcuts bubble to window handler
+      if (navigator.userAgent.includes('Windows') && e.ctrlKey && !e.altKey && !e.shiftKey) {
+        if (['t', 'w', 'j', 'k', '[', ']', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(e.key)) {
+          return false;
+        }
+      }
       return true;
     });
 
