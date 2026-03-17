@@ -472,17 +472,17 @@
       </p>
 
       <div class="install-wrapper">
-        <div class="install-method-toggle">
-          <button class="active" onclick="switchMethod('curl')">curl</button>
-          <button onclick="switchMethod('brew')">Homebrew</button>
+        <div class="install-method-toggle" id="osToggle">
+          <button id="btn-mac" onclick="switchOS('mac')">macOS</button>
+          <button id="btn-win" onclick="switchOS('win')">Windows</button>
         </div>
         <div class="install-box" onclick="copyInstall()" id="installBox">
-          <span class="prompt">$</span>
+          <span class="prompt" id="installPrompt">$</span>
           <span class="cmd" id="installCmd">curl -fsSL https://get-airport.com/install.sh | bash</span>
           <svg class="copy-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </div>
       </div>
-      <p class="install-hint" id="installHint">Click to copy &middot; macOS only</p>
+      <p class="install-hint" id="installHint">Click to copy</p>
 
       <div class="screenshot-wrap">
         <img src="screenshot.jpg" alt="Airport terminal multiplexer showing multiple Claude Code sessions running in parallel">
@@ -522,13 +522,13 @@
       <p class="section-label">Keyboard Shortcuts</p>
       <h2>Navigate at the speed of thought</h2>
 
-      <table class="shortcut-table">
-        <tr><td><kbd>Cmd</kbd> + <kbd>T</kbd></td><td>New session</td></tr>
-        <tr><td><kbd>Cmd</kbd> + <kbd>W</kbd></td><td>Close session</td></tr>
-        <tr><td><kbd>Cmd</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td><td>Switch to session 1&ndash;9</td></tr>
-        <tr><td><kbd>Cmd</kbd> + <kbd>[</kbd> / <kbd>]</kbd></td><td>Previous / next session</td></tr>
-        <tr><td><kbd>Cmd</kbd> + <kbd>J</kbd></td><td>Jump to next waiting session</td></tr>
-        <tr><td><kbd>Cmd</kbd> + <kbd>K</kbd></td><td>Clear terminal</td></tr>
+      <table class="shortcut-table" id="shortcutTable">
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>T</kbd></td><td>New session</td></tr>
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>W</kbd></td><td>Close session</td></tr>
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td><td>Switch to session 1&ndash;9</td></tr>
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>[</kbd> / <kbd>]</kbd></td><td>Previous / next session</td></tr>
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>J</kbd></td><td>Jump to next waiting session</td></tr>
+        <tr><td><kbd class="mod-key">Cmd</kbd> + <kbd>K</kbd></td><td>Clear terminal</td></tr>
       </table>
     </div>
   </section>
@@ -543,20 +543,20 @@
         <div class="step">
           <div class="step-number">1</div>
           <h3>Install</h3>
-          <p>One command to download and install Airport to your Applications folder.</p>
-          <code>curl -fsSL https://get-airport.com/install.sh | bash</code>
+          <p id="step1Desc">One command to download and install Airport to your Applications folder.</p>
+          <code id="step1Code">curl -fsSL https://get-airport.com/install.sh | bash</code>
         </div>
         <div class="step">
           <div class="step-number">2</div>
           <h3>Launch &amp; open sessions</h3>
-          <p>Open Airport and hit <kbd>Cmd</kbd> + <kbd>T</kbd> to create terminals. Run Claude Code in each one.</p>
+          <p>Open Airport and hit <kbd class="mod-key">Cmd</kbd> + <kbd>T</kbd> to create terminals. Run Claude Code in each one.</p>
           <code>claude</code>
         </div>
         <div class="step">
           <div class="step-number">3</div>
           <h3>Work in parallel</h3>
-          <p>Status updates appear automatically. Hit <kbd>Cmd</kbd> + <kbd>J</kbd> to jump to whichever session needs you.</p>
-          <code>Cmd+J &rarr; jump to waiting</code>
+          <p>Status updates appear automatically. Hit <kbd class="mod-key">Cmd</kbd> + <kbd>J</kbd> to jump to whichever session needs you.</p>
+          <code id="step3Code">Cmd+J &rarr; jump to waiting</code>
         </div>
       </div>
     </div>
@@ -592,36 +592,62 @@
   </footer>
 
   <script>
-    var installCommands = {
-      curl: 'curl -fsSL https://get-airport.com/install.sh | bash',
-      brew: 'brew install --cask airport'
+    var platforms = {
+      mac: {
+        cmd: 'curl -fsSL https://get-airport.com/install.sh | bash',
+        prompt: '$',
+        mod: 'Cmd',
+        step1Desc: 'One command to download and install Airport to your Applications folder.',
+        step1Code: 'curl -fsSL https://get-airport.com/install.sh | bash',
+        step3Code: 'Cmd+J \u2192 jump to waiting'
+      },
+      win: {
+        cmd: 'irm https://get-airport.com/install.ps1 | iex',
+        prompt: 'PS>',
+        mod: 'Ctrl',
+        step1Desc: 'One command in PowerShell to download and install Airport.',
+        step1Code: 'irm https://get-airport.com/install.ps1 | iex',
+        step3Code: 'Ctrl+J \u2192 jump to waiting'
+      }
     };
-    var currentMethod = 'curl';
+    var currentOS = 'mac';
 
-    function switchMethod(method) {
-      currentMethod = method;
-      document.getElementById('installCmd').textContent = installCommands[method];
-      var buttons = document.querySelectorAll('.install-method-toggle button');
-      buttons.forEach(function(btn) {
-        btn.classList.toggle('active', btn.textContent.toLowerCase() === method);
-      });
-      // Reset hint
+    function switchOS(os) {
+      currentOS = os;
+      var p = platforms[os];
+      document.getElementById('installCmd').textContent = p.cmd;
+      document.getElementById('installPrompt').textContent = p.prompt;
+      document.getElementById('btn-mac').classList.toggle('active', os === 'mac');
+      document.getElementById('btn-win').classList.toggle('active', os === 'win');
+      // Update modifier keys throughout the page
+      document.querySelectorAll('.mod-key').forEach(function(el) { el.textContent = p.mod; });
+      // Update getting started section
+      document.getElementById('step1Desc').textContent = p.step1Desc;
+      document.getElementById('step1Code').textContent = p.step1Code;
+      document.getElementById('step3Code').textContent = p.step3Code;
+      // Reset copy hint
       var hint = document.getElementById('installHint');
-      hint.textContent = 'Click to copy \u00b7 macOS only';
+      hint.textContent = 'Click to copy';
       hint.classList.remove('copied');
     }
 
     function copyInstall() {
-      navigator.clipboard.writeText(installCommands[currentMethod]).then(function() {
+      navigator.clipboard.writeText(platforms[currentOS].cmd).then(function() {
         var hint = document.getElementById('installHint');
         hint.textContent = 'Copied!';
         hint.classList.add('copied');
         setTimeout(function() {
-          hint.textContent = 'Click to copy \u00b7 macOS only';
+          hint.textContent = 'Click to copy';
           hint.classList.remove('copied');
         }, 2000);
       });
     }
+
+    // Auto-detect OS on load
+    (function() {
+      var isWin = navigator.userAgent.includes('Windows');
+      switchOS(isWin ? 'win' : 'mac');
+    })();
   </script>
 </body>
 </html>
